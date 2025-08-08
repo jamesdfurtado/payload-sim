@@ -4,6 +4,8 @@
 #include "systems/PowerSystem.h"
 #include "systems/DepthControl.h"
 #include "systems/EnvironmentSystem.h"
+#include "systems/SonarSystem.h"
+#include "systems/TargetingSystem.h"
 
 int main() {
     const int screenWidth = 800;
@@ -19,9 +21,13 @@ int main() {
     auto power = std::make_shared<PowerSystem>();
     auto depth = std::make_shared<DepthControl>();
     auto env   = std::make_shared<EnvironmentSystem>();
+    auto sonar = std::make_shared<SonarSystem>();
+    auto targ  = std::make_shared<TargetingSystem>();
     engine.registerSystem(power);
     engine.registerSystem(depth);
     engine.registerSystem(env);
+    engine.registerSystem(sonar);
+    engine.registerSystem(targ);
 
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime();

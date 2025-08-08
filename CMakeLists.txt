@@ -28,6 +28,8 @@ add_executable(payload-sim
   src/systems/PowerSystem.cpp
   src/systems/DepthControl.cpp
   src/systems/EnvironmentSystem.cpp
+  src/systems/SonarSystem.cpp
+  src/systems/TargetingSystem.cpp
 )
 
 target_include_directories(payload-sim PRIVATE src)
