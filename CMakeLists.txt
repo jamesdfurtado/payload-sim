@@ -7,6 +7,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(payload-sim
   src/main.cpp
+  src/simulation/SimulationEngine.cpp
 )
+
+target_include_directories(payload-sim PRIVATE src)
 
 
