@@ -16,10 +16,9 @@ protected:
     std::shared_ptr<SafetySystem> safetySystem;
 };
 
-TEST_F(SimulationEngineTest, InitialStateIsCorrect) {
+TEST_F(SimulationEngineTest, InitialStateIsCorrect) { // Verify default simulation state values
     const auto& state = engine->getState();
     
-    // Test initial state values
     EXPECT_FALSE(state.canLaunchAuthorized);
     EXPECT_FALSE(state.targetValidated);
     EXPECT_FALSE(state.targetAcquired);
@@ -30,7 +29,6 @@ TEST_F(SimulationEngineTest, InitialStateIsCorrect) {
     EXPECT_TRUE(state.noFriendlyUnitsInBlastRadius);
     EXPECT_TRUE(state.launchConditionsFavorable);
     
-    // Test initial values
     EXPECT_EQ(state.submarineDepthMeters, 100.0f);
     EXPECT_EQ(state.optimalLaunchDepthMeters, 120.0f);
     EXPECT_EQ(state.batteryPercent, 100.0f);
@@ -38,27 +36,22 @@ TEST_F(SimulationEngineTest, InitialStateIsCorrect) {
     EXPECT_EQ(state.submarinePosition.y, 0.0f);
 }
 
-TEST_F(SimulationEngineTest, CanRegisterSystems) {
-    // Should not throw when registering systems
+TEST_F(SimulationEngineTest, CanRegisterSystems) { // Systems can be registered without errors
     EXPECT_NO_THROW(engine->registerSystem(powerSystem));
     EXPECT_NO_THROW(engine->registerSystem(safetySystem));
 }
 
-TEST_F(SimulationEngineTest, UpdateCallsSystemUpdates) {
+TEST_F(SimulationEngineTest, UpdateCallsSystemUpdates) { // Engine updates all registered systems correctly
     engine->registerSystem(powerSystem);
     engine->registerSystem(safetySystem);
     
-    // Should not throw when updating
-    EXPECT_NO_THROW(engine->update(0.016f)); // ~60 FPS frame time
+    EXPECT_NO_THROW(engine->update(0.016f));
     
-    // Verify state after systems have processed
     const auto& state = engine->getState();
     
-    // Power system should set battery to 100% (temporary implementation)
     EXPECT_EQ(state.batteryPercent, 100.0f);
     EXPECT_TRUE(state.powerSupplyStable);
     
-    // Safety system should start in idle
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
     EXPECT_FALSE(state.canLaunchAuthorized);
 }

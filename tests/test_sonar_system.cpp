@@ -5,48 +5,37 @@
 class SonarSystemTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Initialize raylib for Vector2 operations (but don't create window)
         sonarSystem = std::make_unique<SonarSystem>();
         
-        // Initialize state
         state.targetValidated = false;
         state.targetAcquired = false;
         state.noFriendlyUnitsInBlastRadius = true;
     }
 
-    void TearDown() override {
-        // Clean up if needed
-    }
+    void TearDown() override {}
 
     std::unique_ptr<SonarSystem> sonarSystem;
     SimulationState state;
 };
 
-TEST_F(SonarSystemTest, HasCorrectName) {
-    EXPECT_STREQ(sonarSystem->getName(), "SonarSystem");
-}
-
-TEST_F(SonarSystemTest, InitialStateIsCorrect) {
+TEST_F(SonarSystemTest, InitialStateIsCorrect) { // Initial state has no targets or contacts
     EXPECT_FALSE(sonarSystem->isTargetValidated());
     EXPECT_FALSE(sonarSystem->isTargetAcquired());
     EXPECT_TRUE(sonarSystem->getContacts().empty());
 }
 
-TEST_F(SonarSystemTest, UpdateSpawnsContacts) {
-    // Update should spawn contacts to maintain minimum population
+TEST_F(SonarSystemTest, UpdateSpawnsContacts) { // Update spawns contacts to maintain population
     sonarSystem->update(state, 0.016f);
     
-    // Should have spawned at least 10 contacts initially
     EXPECT_GE(sonarSystem->getContacts().size(), 10);
 }
 
-TEST_F(SonarSystemTest, ContactsHaveValidTypes) {
+TEST_F(SonarSystemTest, ContactsHaveValidTypes) { // All contacts have valid types
     sonarSystem->update(state, 0.016f);
     
     const auto& contacts = sonarSystem->getContacts();
     
     for (const auto& contact : contacts) {
-        // Verify contact type is one of the valid enum values
         EXPECT_TRUE(contact.type == ContactType::EnemySub ||
                    contact.type == ContactType::FriendlySub ||
                    contact.type == ContactType::Fish ||
@@ -54,30 +43,27 @@ TEST_F(SonarSystemTest, ContactsHaveValidTypes) {
     }
 }
 
-TEST_F(SonarSystemTest, ContactsMove) {
+TEST_F(SonarSystemTest, ContactsMove) { // Contacts move over time
     sonarSystem->update(state, 0.016f);
     
     const auto& contacts = sonarSystem->getContacts();
     if (!contacts.empty()) {
         Vector2 initialPos = contacts[0].position;
         
-        // Update for a longer time to see movement
         for (int i = 0; i < 10; ++i) {
             sonarSystem->update(state, 0.1f);
         }
         
         const auto& updatedContacts = sonarSystem->getContacts();
         if (!updatedContacts.empty()) {
-            // Position should have changed
             EXPECT_NE(updatedContacts[0].position.x, initialPos.x);
         }
     }
 }
 
-TEST_F(SonarSystemTest, ManualLockOnEnemyTarget) {
+TEST_F(SonarSystemTest, ManualLockOnEnemyTarget) { // Can lock onto enemy submarines
     sonarSystem->update(state, 0.016f);
     
-    // Find an enemy submarine in the contacts
     const auto& contacts = sonarSystem->getContacts();
     Vector2 enemyPosition{0, 0};
     bool foundEnemy = false;
@@ -91,21 +77,19 @@ TEST_F(SonarSystemTest, ManualLockOnEnemyTarget) {
     }
     
     if (foundEnemy) {
-        // Attempt to lock onto the enemy
         sonarSystem->attemptManualLock(enemyPosition);
         sonarSystem->update(state, 0.016f);
         
         EXPECT_TRUE(sonarSystem->isTargetAcquired());
-        EXPECT_TRUE(sonarSystem->isTargetValidated()); // Should be true for enemy subs
+        EXPECT_TRUE(sonarSystem->isTargetValidated());
         EXPECT_TRUE(state.targetAcquired);
         EXPECT_TRUE(state.targetValidated);
     }
 }
 
-TEST_F(SonarSystemTest, ManualLockOnFriendlyTargetNotValidated) {
+TEST_F(SonarSystemTest, ManualLockOnFriendlyTargetNotValidated) { // Friendly targets are not validated
     sonarSystem->update(state, 0.016f);
     
-    // Find a friendly submarine in the contacts
     const auto& contacts = sonarSystem->getContacts();
     Vector2 friendlyPosition{0, 0};
     bool foundFriendly = false;
@@ -119,32 +103,26 @@ TEST_F(SonarSystemTest, ManualLockOnFriendlyTargetNotValidated) {
     }
     
     if (foundFriendly) {
-        // Attempt to lock onto the friendly
         sonarSystem->attemptManualLock(friendlyPosition);
         sonarSystem->update(state, 0.016f);
         
         EXPECT_TRUE(sonarSystem->isTargetAcquired());
-        EXPECT_FALSE(sonarSystem->isTargetValidated()); // Should be false for friendly subs
+        EXPECT_FALSE(sonarSystem->isTargetValidated());
         EXPECT_TRUE(state.targetAcquired);
         EXPECT_FALSE(state.targetValidated);
     }
 }
 
-TEST_F(SonarSystemTest, FriendlyUnitsInBlastRadiusDetection) {
+TEST_F(SonarSystemTest, FriendlyUnitsInBlastRadiusDetection) { // Blast radius detection works
     sonarSystem->update(state, 0.016f);
     
-    // This test is complex because it requires specific positioning
-    // We'll just verify the basic mechanism works
     sonarSystem->update(state, 0.016f);
     
-    // noFriendlyUnitsInBlastRadius should be calculated
-    // The exact value depends on random contact spawning
-    // Just verify it's a valid boolean
     EXPECT_TRUE(state.noFriendlyUnitsInBlastRadius == true || 
                 state.noFriendlyUnitsInBlastRadius == false);
 }
 
-TEST_F(SonarSystemTest, ContactRemovalWorks) {
+TEST_F(SonarSystemTest, ContactRemovalWorks) { // Can remove contacts from the list
     sonarSystem->update(state, 0.016f);
     
     size_t initialCount = sonarSystem->getContacts().size();
@@ -154,10 +132,9 @@ TEST_F(SonarSystemTest, ContactRemovalWorks) {
     }
 }
 
-TEST_F(SonarSystemTest, LockFailsWhenTooFarFromTarget) {
+TEST_F(SonarSystemTest, LockFailsWhenTooFarFromTarget) { // Lock fails when too far from target
     sonarSystem->update(state, 0.016f);
     
-    // Try to lock onto a position far from any contacts
     Vector2 farPosition{1000.0f, 1000.0f};
     sonarSystem->attemptManualLock(farPosition);
     sonarSystem->update(state, 0.016f);

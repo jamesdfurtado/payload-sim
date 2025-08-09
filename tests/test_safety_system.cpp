@@ -6,7 +6,6 @@ protected:
     void SetUp() override {
         safetySystem = std::make_unique<SafetySystem>();
         
-        // Set up a baseline state with all conditions met except authorization
         state.canLaunchAuthorized = false;
         state.targetValidated = true;
         state.targetAcquired = true;
@@ -22,11 +21,11 @@ protected:
     SimulationState state;
 };
 
-TEST_F(SafetySystemTest, InitialPhaseIsIdle) {
+TEST_F(SafetySystemTest, InitialPhaseIsIdle) { // Safety system starts in idle phase
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
 }
 
-TEST_F(SafetySystemTest, IdlePhaseSetsCorrectState) {
+TEST_F(SafetySystemTest, IdlePhaseSetsCorrectState) { // Idle phase disables authorization and payload
     safetySystem->update(state, 0.016f);
     
     EXPECT_FALSE(state.canLaunchAuthorized);
@@ -34,32 +33,27 @@ TEST_F(SafetySystemTest, IdlePhaseSetsCorrectState) {
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
 }
 
-TEST_F(SafetySystemTest, AuthorizationRequiresCorrectCode) {
-    // Set challenge code
+TEST_F(SafetySystemTest, AuthorizationRequiresCorrectCode) { // Only correct auth code grants authorization
     safetySystem->setChallengeCode("1234");
     
-    // Wrong code should not authorize
     safetySystem->requestAuthorizationCode("5678");
     safetySystem->update(state, 0.016f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
     
-    // Correct code should authorize if conditions are met
     safetySystem->requestAuthorizationCode("1234");
     safetySystem->update(state, 0.016f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Authorized);
     EXPECT_TRUE(state.canLaunchAuthorized);
 }
 
-TEST_F(SafetySystemTest, AuthorizationRequiresAllConditions) {
+TEST_F(SafetySystemTest, AuthorizationRequiresAllConditions) { // Authorization fails if any condition is missing
     safetySystem->setChallengeCode("1234");
     
-    // Missing target validation
     state.targetValidated = false;
     safetySystem->requestAuthorizationCode("1234");
     safetySystem->update(state, 0.016f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
     
-    // Restore target validation, remove power stability
     state.targetValidated = true;
     state.powerSupplyStable = false;
     safetySystem->requestAuthorizationCode("1234");
@@ -67,19 +61,16 @@ TEST_F(SafetySystemTest, AuthorizationRequiresAllConditions) {
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
 }
 
-TEST_F(SafetySystemTest, CanArmAfterAuthorization) {
-    // First authorize
+TEST_F(SafetySystemTest, CanArmAfterAuthorization) { // Can arm payload after authorization
     safetySystem->setChallengeCode("1234");
     safetySystem->requestAuthorizationCode("1234");
     safetySystem->update(state, 0.016f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Authorized);
     
-    // Then arm
     safetySystem->arm();
     safetySystem->update(state, 0.016f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Arming);
     
-    // Wait for arming to complete (up to ~3 seconds)
     {
         float elapsed = 0.0f;
         for (int i = 0; i < 200 && safetySystem->getPhase() == LaunchPhase::Arming; ++i) {
@@ -92,8 +83,7 @@ TEST_F(SafetySystemTest, CanArmAfterAuthorization) {
     EXPECT_TRUE(state.payloadSystemOperational);
 }
 
-TEST_F(SafetySystemTest, CanLaunchAfterArmed) {
-    // Go through authorization and arming
+TEST_F(SafetySystemTest, CanLaunchAfterArmed) { // Can launch payload after arming
     safetySystem->setChallengeCode("1234");
     safetySystem->requestAuthorizationCode("1234");
     safetySystem->update(state, 0.016f);
@@ -103,15 +93,12 @@ TEST_F(SafetySystemTest, CanLaunchAfterArmed) {
     safetySystem->update(state, 0.016f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Arming);
     
-    // Wait for arming to complete (2 seconds)
     safetySystem->update(state, 2.1f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Armed);
     EXPECT_TRUE(state.payloadSystemOperational);
     
-    // Launch and tick until we transition
     safetySystem->launch();
     safetySystem->update(state, 0.016f);
-    // Ensure we enter Launching
     {
         float elapsed = 0.0f;
         for (int i = 0; i < 60 && safetySystem->getPhase() == LaunchPhase::Armed; ++i) {
@@ -123,7 +110,6 @@ TEST_F(SafetySystemTest, CanLaunchAfterArmed) {
     }
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Launching);
     
-    // Wait for launch to complete (up to ~2 seconds)
     {
         float elapsed = 0.0f;
         for (int i = 0; i < 200 && safetySystem->getPhase() != LaunchPhase::Launched; ++i) {
@@ -135,36 +121,30 @@ TEST_F(SafetySystemTest, CanLaunchAfterArmed) {
     }
 }
 
-TEST_F(SafetySystemTest, ResetsOnConditionLoss) {
-    // Go to authorized state
+TEST_F(SafetySystemTest, ResetsOnConditionLoss) { // System resets when conditions are lost
     safetySystem->setChallengeCode("1234");
     safetySystem->requestAuthorizationCode("1234");
     safetySystem->update(state, 0.016f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Authorized);
     
-    // Lose a condition
     state.targetValidated = false;
     safetySystem->update(state, 0.016f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Resetting);
     EXPECT_EQ(safetySystem->getResetReason(), "Target lost validation");
     
-    // Wait for reset to complete
     safetySystem->update(state, 2.1f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
 }
 
-TEST_F(SafetySystemTest, ManualResetWorks) {
-    // Go to any state
+TEST_F(SafetySystemTest, ManualResetWorks) { // Manual reset returns system to idle
     safetySystem->setChallengeCode("1234");
     safetySystem->requestAuthorizationCode("1234");
     safetySystem->update(state, 0.016f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Authorized);
     
-    // Manual reset
     safetySystem->reset();
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Resetting);
     
-    // Wait for reset to complete
     safetySystem->update(state, 2.1f);
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
 }
