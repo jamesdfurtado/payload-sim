@@ -16,7 +16,7 @@ int main() {
 
     SimulationEngine engine;
 
-    UiController ui(engine);
+    UiController ui(engine, sonar.get(), power.get(), depth.get(), targ.get(), nullptr, env.get());
 
     auto power = std::make_shared<PowerSystem>();
     auto depth = std::make_shared<DepthControl>();
