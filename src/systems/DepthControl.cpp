@@ -3,10 +3,10 @@
 
 void DepthControl::update(SimulationState& state, float dt) {
     float thrust = (ballastThrottle01 - 0.5f) * 2.0f; // -1..1
-    verticalSpeedMps += thrust * 2.0f * dt; // accelerate
-    verticalSpeedMps *= 0.98f; // damping
+    verticalSpeedMps += thrust * 5.0f * dt; // increased acceleration for more responsive movement
+    verticalSpeedMps *= 0.95f; // reduced damping for more movement
 
-    state.submarineDepthMeters += verticalSpeedMps;
+    state.submarineDepthMeters += verticalSpeedMps * dt;
     if (state.submarineDepthMeters < 5.0f) state.submarineDepthMeters = 5.0f;
     if (state.submarineDepthMeters > 400.0f) state.submarineDepthMeters = 400.0f;
 
