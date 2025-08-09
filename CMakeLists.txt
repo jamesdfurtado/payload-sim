@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(payload_sim VERSION 0.1.0 LANGUAGES CXX)
 
+cmake_policy(VERSION 3.20)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -22,16 +24,22 @@ set(BUILD_TESTING  OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(raylib)
 
-add_executable(payload-sim
-  src/main.cpp
-  src/simulation/SimulationEngine.cpp
-  src/systems/PowerSystem.cpp
-  src/systems/DepthControl.cpp
-  src/systems/EnvironmentSystem.cpp
-  src/systems/SonarSystem.cpp
-  src/systems/TargetingSystem.cpp
-  src/systems/SafetySystem.cpp
+## Patch raylib's CMakeLists to relax the minimum CMake version requirement
+file(READ  ${raylib_SOURCE_DIR}/CMakeLists.txt CONTENT)
+string(REGEX REPLACE
+  "cmake_minimum_required\\(VERSION +[0-9]+\\.[0-9]+\\)"
+  "cmake_minimum_required(VERSION 3.10)"
+  CONTENT
+  "${CONTENT}"
 )
+file(WRITE ${raylib_SOURCE_DIR}/CMakeLists.txt "${CONTENT}")
+
+## Sources
+file(GLOB_RECURSE SIM_SRC CONFIGURE_DEPENDS
+  src/*.cpp
+)
+
+add_executable(payload-sim ${SIM_SRC})
 
 target_include_directories(payload-sim PRIVATE src)
 target_link_libraries(payload-sim PRIVATE raylib)
@@ -61,5 +69,8 @@ endif()
 if(WIN32 AND MINGW)
   target_link_libraries(payload-sim PRIVATE winmm)
 endif()
+
+# Install step (optional)
+install(TARGETS payload-sim RUNTIME DESTINATION bin)
 
 
