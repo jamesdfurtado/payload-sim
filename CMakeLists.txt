@@ -36,4 +36,30 @@ add_executable(payload-sim
 target_include_directories(payload-sim PRIVATE src)
 target_link_libraries(payload-sim PRIVATE raylib)
 
+# Platform specifics
+option(BUILD_WEB "Build for WebAssembly (Emscripten)" OFF)
+if(EMSCRIPTEN OR BUILD_WEB)
+  message(STATUS "Configuring for WebAssembly")
+  set(CMAKE_EXECUTABLE_SUFFIX ".html")
+  target_compile_definitions(payload-sim PRIVATE PLATFORM_WEB)
+  target_link_options(payload-sim PRIVATE
+    -sUSE_GLFW=3
+    -sWASM=1
+    -sALLOW_MEMORY_GROWTH=1
+    -sASYNCIFY
+    --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html
+  )
+else()
+  if(MSVC)
+    target_compile_options(payload-sim PRIVATE /W4 /permissive-)
+  else()
+    target_compile_options(payload-sim PRIVATE -Wall -Wextra -Wpedantic)
+  endif()
+endif()
+
+# On Windows with MinGW
+if(WIN32 AND MINGW)
+  target_link_libraries(payload-sim PRIVATE winmm)
+endif()
+
 
