@@ -28,7 +28,7 @@ public:
 
     Vector2 getLockedTarget() const { return lockedTarget; }
 
-    void removeContact(int idx) { if (idx >= 0 && idx < (int)contacts.size()) contacts.erase(contacts.begin() + idx); }
+    void removeContact(int idx);  // Moved to .cpp for proper target disengagement
 
 private:
     std::vector<SonarContact> contacts;

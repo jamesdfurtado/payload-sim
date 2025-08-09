@@ -108,4 +108,20 @@ void SonarSystem::attemptManualLock(const Vector2& cursorWorldPos) {
     }
 }
 
+void SonarSystem::removeContact(int idx) {
+    if (idx >= 0 && idx < (int)contacts.size()) {
+        // If removing the currently locked target, disengage crosshair
+        if (targetAcquired && lockedTargetIdx == idx) {
+            targetAcquired = false;
+            targetValidated = false;
+            lockedTargetIdx = -1;
+        } else if (targetAcquired && lockedTargetIdx > idx) {
+            // Adjust locked target index if it's after the removed contact
+            lockedTargetIdx--;
+        }
+        
+        contacts.erase(contacts.begin() + idx);
+    }
+}
+
 

@@ -66,7 +66,7 @@ private:
     Vector2 screenToWorld(Vector2 p, Rectangle r);
 
     static constexpr float MISSILE_SPEED = 200.0f;
-    static constexpr float EXPLOSION_DURATION = 1.0f;
+    static constexpr float EXPLOSION_DURATION = 0.6f;
 };
 
 
