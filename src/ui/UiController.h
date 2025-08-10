@@ -13,6 +13,7 @@
 #include "StatusPanel.h"
 #include "ControlsPanel.h"
 #include "SonarDisplay.h"
+#include "InteractiveControls.h"
 
 class UiController {
 public:
@@ -43,10 +44,12 @@ private:
     std::unique_ptr<StatusPanel> statusPanel;
     std::unique_ptr<ControlsPanel> controlsPanel;
     std::unique_ptr<SonarDisplay> sonarDisplay;
+    std::unique_ptr<InteractiveControls> interactiveControls;
 
     // Component state
     InputHandler::InputState inputState;
     SonarDisplay::MissileState missileState;
+    InteractiveControls::UIState uiState;
 };
 
 

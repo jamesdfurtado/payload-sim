@@ -36,31 +36,16 @@ void InputHandler::handleInput(float dt, InputState& inputState) {
         return;
     }
 
-    // Normal movement controls
-    float ballast = 0.5f;
-    if (IsKeyDown(KEY_W)) ballast = 1.0f;
-    else if (IsKeyDown(KEY_S)) ballast = 0.0f;
-    if (depth) depth->setBallastThrottle(ballast);
-
-    // Power controls
-    if (IsKeyDown(KEY_A)) inputState.uiWeaponsPower = std::max(0.0f, inputState.uiWeaponsPower - 0.3f * dt);
-    if (IsKeyDown(KEY_D)) inputState.uiWeaponsPower = std::min(1.0f, inputState.uiWeaponsPower + 0.3f * dt);
-    if (power) power->routePowerToWeapons(inputState.uiWeaponsPower);
-
-    // Targeting stability controls
+    // Targeting stability controls (keep these keyboard controls)
     if (IsKeyDown(KEY_Q)) { if (targeting) targeting->adjustStability(-0.4f * dt); }
     if (IsKeyDown(KEY_E)) { if (targeting) targeting->adjustStability(+0.4f * dt); }
 
-    // Launch sequence controls
-    if (IsKeyPressed(KEY_ONE)) processAuthRequest(inputState);
-    if (IsKeyPressed(KEY_TWO)) processArmRequest(inputState);
-    if (IsKeyPressed(KEY_THREE)) processLaunchRequest(inputState);
-    if (IsKeyPressed(KEY_FOUR)) processResetRequest(inputState);
+    // NOTE: Power controls (A/D), depth controls (W/S), and safety sequence (1-4) are now handled by UI components
 }
 
 void InputHandler::handleAuthInput(InputState& inputState) {
     Rectangle controls = { 640, 380, 620, 320 };
-    Rectangle authBox = { controls.x + 10, controls.y + 280, 300, 28 };
+    Rectangle authBox = { controls.x + 20, controls.y + 230, 300, 28 };
 
     // Handle mouse clicks for auth box focus
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {

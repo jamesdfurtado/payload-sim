@@ -1,6 +1,7 @@
 #include "StatusPanel.h"
 #include "../simulation/SimulationEngine.h"
 #include "../systems/PowerSystem.h"
+#include <algorithm>
 
 StatusPanel::StatusPanel(SimulationEngine& engine, PowerSystem* power)
     : engine(engine), power(power) {
@@ -40,12 +41,37 @@ void StatusPanel::drawStatusLights(Rectangle r) {
     }
 }
 
-void StatusPanel::drawPower(Rectangle r, float uiWeaponsPower) {
+void StatusPanel::drawPower(Rectangle r, float& uiWeaponsPower) {
     auto& s = engine.getState();
     DrawRectangleRec(r, Fade(DARKBLUE, 0.3f));
     DrawText("Power", (int)r.x + 10, (int)r.y + 8, 20, SKYBLUE);
     DrawText(TextFormat("Battery: %.1f%%", s.batteryPercent), (int)r.x + 10, (int)r.y + 40, 18, RAYWHITE);
     DrawText(TextFormat("Weapons Power: %.0f%%", uiWeaponsPower * 100.0f), (int)r.x + 10, (int)r.y + 64, 18, RAYWHITE);
+    
+    // Interactive power slider
+    Rectangle sliderRect = { r.x + 200, r.y + 60, 200, 20 };
+    DrawRectangleRec(sliderRect, Fade(DARKGRAY, 0.8f));
+    DrawRectangleLinesEx(sliderRect, 2, GRAY);
+    
+    // Draw power level indicator
+    float powerBarWidth = sliderRect.width * uiWeaponsPower;
+    Rectangle powerBar = { sliderRect.x, sliderRect.y, powerBarWidth, sliderRect.height };
+    DrawRectangleRec(powerBar, SKYBLUE);
+    
+    // Draw slider handle
+    float handleX = sliderRect.x + sliderRect.width * uiWeaponsPower;
+    DrawCircle((int)handleX, (int)(sliderRect.y + sliderRect.height / 2), 12, RAYWHITE);
+    DrawCircleLines((int)handleX, (int)(sliderRect.y + sliderRect.height / 2), 12, BLACK);
+    
+    // Handle mouse interaction
+    Vector2 mousePos = GetMousePosition();
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mousePos, sliderRect)) {
+        float relativeX = (mousePos.x - sliderRect.x) / sliderRect.width;
+        uiWeaponsPower = std::max(0.0f, std::min(1.0f, relativeX));
+        if (power) power->routePowerToWeapons(uiWeaponsPower);
+    }
+    
+    DrawText("Drag to adjust", (int)sliderRect.x, (int)(sliderRect.y + sliderRect.height + 5), 14, LIGHTGRAY);
 }
 
 void StatusPanel::drawDepth(Rectangle r) {

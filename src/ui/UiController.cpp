@@ -14,11 +14,17 @@ UiController::UiController(SimulationEngine& engine,
     statusPanel = std::make_unique<StatusPanel>(engine, power);
     controlsPanel = std::make_unique<ControlsPanel>(safety);
     sonarDisplay = std::make_unique<SonarDisplay>(engine, sonar, safety);
+    interactiveControls = std::make_unique<InteractiveControls>(engine, safety, depth);
 }
 
 void UiController::update(float dt) {
-    // Delegate input handling to InputHandler
-    inputHandler->handleInput(dt, inputState);
+    // Handle auth input still through InputHandler (keyboard only)
+    if (inputState.authBoxFocused) {
+        inputHandler->handleAuthInput(inputState);
+    }
+    
+    // Update interactive controls (mouse-based UI)
+    interactiveControls->update(dt, uiState, inputState);
     
     // Handle sonar clicks
     Rectangle sonarRect{ 20, 120, 600, 580 };
@@ -26,6 +32,9 @@ void UiController::update(float dt) {
     
     // Update missile animation
     sonarDisplay->updateMissileAnimation(dt, missileState, sonarRect);
+    
+    // Handle power controls with mouse (instead of keyboard A/D)
+    // This will be handled in StatusPanel for the power slider
 }
 
 void UiController::render() {
@@ -41,7 +50,8 @@ void UiController::render() {
     statusPanel->drawStatusLights(status);
     statusPanel->drawPower(powerR, inputState.uiWeaponsPower);
     statusPanel->drawDepth(depthR);
-    controlsPanel->drawControls(controls, inputState);
+    interactiveControls->drawDepthControlInPanel(depthR, uiState);
+    interactiveControls->drawInteractiveControls(controls, uiState, inputState);
     sonarDisplay->drawSonar(sonarR, missileState);
 }
 
