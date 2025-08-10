@@ -101,9 +101,10 @@ if(TEST_SRC)
   file(GLOB_RECURSE SIM_TEST_SOURCES CONFIGURE_DEPENDS
     src/simulation/*.cpp
     src/systems/*.cpp
+    src/ui/*.cpp
   )
   
-  # Link simulation systems to tests (but not main.cpp)
+  # Link simulation systems and UI components to tests (but not main.cpp)
   target_sources(payload-sim-tests PRIVATE ${SIM_TEST_SOURCES})
   
   # Apply same platform-specific settings as main executable
