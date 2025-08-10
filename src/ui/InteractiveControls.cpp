@@ -9,9 +9,10 @@
 InteractiveControls::InteractiveControls(SimulationEngine& engine, SafetySystem* safety, DepthControl* depth)
     : engine(engine), safety(safety), depth(depth) {
     std::srand((unsigned int)std::time(nullptr));
+    authCode = std::make_unique<AuthCode>(engine, safety);
 }
 
-void InteractiveControls::update(float dt, UIState& uiState, InputHandler::InputState& inputState) {
+void InteractiveControls::update(float dt, UIState& uiState, AuthCode::AuthState& authState) {
     // Update safety button lighting based on current state
     if (safety) {
         LaunchPhase phase = safety->getPhase();
@@ -22,21 +23,8 @@ void InteractiveControls::update(float dt, UIState& uiState, InputHandler::Input
         uiState.resetButtonLit = (phase == LaunchPhase::Resetting);
     }
     
-    // Handle reset timer countdown
-    if (inputState.resetTimer > 0.0f && safety && safety->getPhase() == LaunchPhase::Resetting) {
-        inputState.resetTimer -= dt;
-        if (inputState.resetTimer <= 0.0f) {
-            if (safety) safety->forceIdle();
-            inputState.feedbackMessage = "System ready.";
-        }
-        return;
-    }
-    
-    // Handle auth input if focused - preserve existing auth functionality
-    if (inputState.authBoxFocused) {
-        // Keep existing auth input handling from InputHandler
-        return;
-    }
+    // Update auth calculator
+    authCode->update(dt, authState);
     
     // Calculate UI rectangles for interactive elements
     Rectangle controlsRect = { 640, 380, 620, 320 };
@@ -47,7 +35,7 @@ void InteractiveControls::update(float dt, UIState& uiState, InputHandler::Input
     updateDepthThrottle(uiState, throttleRect);
     
     // Update safety buttons
-    updateSafetyButtons(uiState, inputState, controlsRect);
+    updateSafetyButtons(uiState, controlsRect, authState);
     
     // Apply depth throttle to depth control system
     if (depth) {
@@ -83,10 +71,10 @@ void InteractiveControls::updateDepthThrottle(UIState& uiState, Rectangle thrott
     uiState.depthThrottleSliderPos = { throttleRect.x + throttleRect.width / 2, sliderY };
 }
 
-void InteractiveControls::updateSafetyButtons(UIState& uiState, InputHandler::InputState& inputState, Rectangle r) {
-    // Suppress unused parameter warning
-    (void)uiState;
-    // Define button positions - moved to left side with better spacing
+void InteractiveControls::updateSafetyButtons(UIState& uiState, Rectangle r, AuthCode::AuthState& authState) {
+    (void)uiState; // Suppress unused parameter warning
+    (void)authState; // Suppress unused parameter warning
+    
     Rectangle authButton = { r.x + 20, r.y + 50, 110, 40 };
     Rectangle armButton = { r.x + 140, r.y + 50, 110, 40 };
     Rectangle launchButton = { r.x + 260, r.y + 50, 110, 40 };
@@ -94,25 +82,29 @@ void InteractiveControls::updateSafetyButtons(UIState& uiState, InputHandler::In
     
     // Handle button clicks
     if (isButtonPressed(authButton)) {
-        processAuthRequest(inputState);
+        // Request auth code from AuthCode
+        authCode->requestAuthCode(authState);
     }
     if (isButtonPressed(armButton)) {
-        processArmRequest(inputState);
+        processArmRequest();
     }
     if (isButtonPressed(launchButton)) {
-        processLaunchRequest(inputState);
+        processLaunchRequest();
     }
     if (isButtonPressed(resetButton)) {
-        processResetRequest(inputState);
+        processResetRequest();
     }
 }
 
-void InteractiveControls::drawInteractiveControls(Rectangle r, const UIState& uiState, const InputHandler::InputState& inputState) {
+void InteractiveControls::drawInteractiveControls(Rectangle r, const UIState& uiState, const AuthCode::AuthState& authState) {
     DrawRectangleRec(r, Fade(DARKBROWN, 0.3f));
     DrawText("Interactive Controls", (int)r.x + 10, (int)r.y + 8, 20, ORANGE);
     
     // Draw safety state buttons
-    drawSafetyStateButtons(r, uiState, inputState);
+    drawSafetyStateButtons(r, uiState);
+    
+    // Draw auth calculator
+    authCode->drawAuthCode(r, authState);
     
     // Show current launch phase - positioned below buttons
     if (safety) {
@@ -124,7 +116,7 @@ void InteractiveControls::drawInteractiveControls(Rectangle r, const UIState& ui
             case LaunchPhase::Armed: phaseStr = "ARMED"; break;
             case LaunchPhase::Launching: phaseStr = "LAUNCHING"; break;
             case LaunchPhase::Launched: phaseStr = "LAUNCHED"; break;
-            case LaunchPhase::Resetting: phaseStr = (inputState.resetTimer > 0.0f ? "RESETTING..." : "RESET"); break;
+            case LaunchPhase::Resetting: phaseStr = "RESETTING"; break;
             default: phaseStr = "UNKNOWN"; break;
         }
         DrawText(TextFormat("Payload State: %s", phaseStr), (int)r.x + 20, (int)r.y + 110, 18, YELLOW);
@@ -150,34 +142,8 @@ void InteractiveControls::drawInteractiveControls(Rectangle r, const UIState& ui
                 }
                 break;
             default:
-                if (!inputState.feedbackMessage.empty()) {
-                    DrawText(inputState.feedbackMessage.c_str(), (int)r.x + 20, (int)r.y + 140, 16, LIGHTGRAY);
-                }
                 break;
         }
-    } else if (!inputState.feedbackMessage.empty()) {
-        DrawText(inputState.feedbackMessage.c_str(), (int)r.x + 20, (int)r.y + 140, 16, LIGHTGRAY);
-    }
-    
-    // Draw auth input area - preserve existing functionality - moved to bottom
-    Rectangle authBox = { r.x + 20, r.y + 230, 300, 28 };
-    DrawText("AUTH CODE:", (int)authBox.x, (int)authBox.y - 22, 18, SKYBLUE);
-    DrawRectangleLinesEx(authBox, 2, inputState.authBoxFocused ? YELLOW : GRAY);
-    DrawText(inputState.authCodeInput.c_str(), (int)authBox.x + 8, (int)authBox.y + 4, 18, SKYBLUE);
-    
-    if (inputState.authBoxFocused) {
-        DrawRectangle((int)authBox.x + 8 + MeasureText(inputState.authCodeInput.c_str(), 18), (int)authBox.y + 6, 12, 18, SKYBLUE);
-    }
-    
-    // Show AUTH challenge code
-    if (inputState.authBoxFocused && !inputState.authChallengeCode.empty()) {
-        int boxW = 220, boxH = 60;
-        int boxX = (int)authBox.x + 320;
-        int boxY = (int)authBox.y - 10;
-        DrawRectangle(boxX, boxY, boxW, boxH, Fade(BLACK, 0.85f));
-        DrawRectangleLines(boxX, boxY, boxW, boxH, SKYBLUE);
-        DrawText("AUTH CHALLENGE", boxX + 16, boxY + 8, 18, SKYBLUE);
-        DrawText(inputState.authChallengeCode.c_str(), boxX + 60, boxY + 32, 28, YELLOW);
     }
 }
 
@@ -221,20 +187,16 @@ void InteractiveControls::drawDepthThrottle(Rectangle r, const UIState& uiState)
     DrawText(TextFormat("Throttle: %.0f%%", (uiState.depthThrottleValue - 0.5f) * 200.0f), (int)throttleRect.x + 80, (int)throttleRect.y + 30, 14, LIGHTGRAY);
 }
 
-void InteractiveControls::drawSafetyStateButtons(Rectangle r, const UIState& uiState, const InputHandler::InputState& inputState) {
-    // Suppress unused parameter warning
-    (void)inputState;
-    // Define button positions - moved to left side with better spacing
+void InteractiveControls::drawSafetyStateButtons(Rectangle r, const UIState& uiState) {
+    // Define button positions - AUTH button is essential for the safety sequence
     Rectangle authButton = { r.x + 20, r.y + 50, 110, 40 };
     Rectangle armButton = { r.x + 140, r.y + 50, 110, 40 };
     Rectangle launchButton = { r.x + 260, r.y + 50, 110, 40 };
     Rectangle resetButton = { r.x + 380, r.y + 50, 110, 40 };
     
-    // Draw safety sequence progression label
-    DrawText("Safety Sequence:", (int)r.x + 20, (int)r.y + 30, 16, LIGHTGRAY);
     
     // Determine if buttons should be active (clickable) based on current state
-    bool authActive = true; // Always can try to auth
+    bool authActive = safety && safety->getPhase() == LaunchPhase::Idle;
     bool armActive = safety && safety->getPhase() == LaunchPhase::Authorized;
     bool launchActive = safety && safety->getPhase() == LaunchPhase::Armed;
     bool resetActive = safety && safety->getPhase() != LaunchPhase::Idle && safety->getPhase() != LaunchPhase::Resetting;
@@ -291,56 +253,26 @@ void InteractiveControls::drawLitButton(Rectangle buttonRect, const char* text, 
 }
 
 // Auth-related methods - preserve existing functionality from InputHandler
-bool InteractiveControls::checkAllConditionsExceptAuth() {
-    auto& s = engine.getState();
-    return s.targetValidated && s.targetAcquired && s.depthClearanceMet && 
-           s.launchTubeIntegrity && s.powerSupplyStable && 
-           s.noFriendlyUnitsInBlastRadius && s.launchConditionsFavorable;
-}
-
-void InteractiveControls::processAuthRequest(InputHandler::InputState& inputState) {
-    if (!inputState.authBoxFocused) {
-        if (checkAllConditionsExceptAuth()) {
-            inputState.authBoxFocused = true;
-            // Generate random 4-digit code
-            int code = 1000 + std::rand() % 9000;
-            inputState.authChallengeCode = std::to_string(code);
-            if (safety) safety->setChallengeCode(inputState.authChallengeCode);
-            inputState.authCodeInput.clear();
-            inputState.feedbackMessage = "Enter the AUTH code shown below.";
-        } else {
-            inputState.feedbackMessage = "Cannot request AUTH: All conditions (except Authorization) must be met.";
-            inputState.authBoxFocused = false;
-        }
-    }
-}
-
-void InteractiveControls::processArmRequest(InputHandler::InputState& inputState) {
+void InteractiveControls::processArmRequest() {
     if (safety) {
-        if (safety->getPhase() != LaunchPhase::Authorized) {
-            inputState.feedbackMessage = "Cannot ARM: Not authorized.";
-        } else {
-            safety->arm();
-            inputState.feedbackMessage.clear();
-        }
+        safety->arm();
     }
 }
 
-void InteractiveControls::processLaunchRequest(InputHandler::InputState& inputState) {
+void InteractiveControls::processLaunchRequest() {
     if (safety) {
-        if (safety->getPhase() != LaunchPhase::Armed) {
-            inputState.feedbackMessage = "Cannot LAUNCH: Not ARMED.";
-        } else {
-            safety->launch();
-        }
+        safety->launch();
     }
 }
 
-void InteractiveControls::processResetRequest(InputHandler::InputState& inputState) {
+void InteractiveControls::processResetRequest() {
     if (safety) {
         safety->reset();
-        inputState.feedbackMessage = "System RESETTING...";
-        inputState.resetTimer = 2.0f;
+        // Clear auth state when reset is requested
+        if (authCode) {
+            // We need to access the authState to clear it
+            // This will be handled in the AuthCode::update method when it detects reset state
+        }
     }
 }
 

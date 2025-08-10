@@ -12,19 +12,13 @@ UiController::UiController(SimulationEngine& engine,
     // Initialize UI components
     inputHandler = std::make_unique<InputHandler>(engine, sonar, power, depth, targeting, safety);
     statusPanel = std::make_unique<StatusPanel>(engine, power);
-    controlsPanel = std::make_unique<ControlsPanel>(safety);
     sonarDisplay = std::make_unique<SonarDisplay>(engine, sonar, safety);
     interactiveControls = std::make_unique<InteractiveControls>(engine, safety, depth);
 }
 
 void UiController::update(float dt) {
-    // Handle auth input still through InputHandler (keyboard only)
-    if (inputState.authBoxFocused) {
-        inputHandler->handleAuthInput(inputState);
-    }
-    
-    // Update interactive controls (mouse-based UI)
-    interactiveControls->update(dt, uiState, inputState);
+    // Update interactive controls (mouse-based UI with new auth calculator)
+    interactiveControls->update(dt, uiState, authState);
     
     // Handle sonar clicks
     Rectangle sonarRect{ 20, 120, 600, 580 };
@@ -33,8 +27,8 @@ void UiController::update(float dt) {
     // Update missile animation
     sonarDisplay->updateMissileAnimation(dt, missileState, sonarRect);
     
-    // Handle power controls with mouse (instead of keyboard A/D)
-    // This will be handled in StatusPanel for the power slider
+    // Handle targeting controls (Q/E keys still work)
+    inputHandler->handleInput(dt, inputState);
 }
 
 void UiController::render() {
@@ -48,10 +42,10 @@ void UiController::render() {
 
     // Delegate rendering to UI components
     statusPanel->drawStatusLights(status);
-    statusPanel->drawPower(powerR, inputState.uiWeaponsPower);
+    statusPanel->drawPower(powerR, uiWeaponsPower);
     statusPanel->drawDepth(depthR);
     interactiveControls->drawDepthControlInPanel(depthR, uiState);
-    interactiveControls->drawInteractiveControls(controls, uiState, inputState);
+    interactiveControls->drawInteractiveControls(controls, uiState, authState);
     sonarDisplay->drawSonar(sonarR, missileState);
 }
 

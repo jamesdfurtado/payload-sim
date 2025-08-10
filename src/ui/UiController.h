@@ -11,9 +11,9 @@
 #include "../systems/EnvironmentSystem.h"
 #include "InputHandler.h"
 #include "StatusPanel.h"
-#include "ControlsPanel.h"
 #include "SonarDisplay.h"
 #include "InteractiveControls.h"
+#include "AuthCode.h"
 
 class UiController {
 public:
@@ -42,7 +42,6 @@ private:
     // UI Components
     std::unique_ptr<InputHandler> inputHandler;
     std::unique_ptr<StatusPanel> statusPanel;
-    std::unique_ptr<ControlsPanel> controlsPanel;
     std::unique_ptr<SonarDisplay> sonarDisplay;
     std::unique_ptr<InteractiveControls> interactiveControls;
 
@@ -50,6 +49,8 @@ private:
     InputHandler::InputState inputState;
     SonarDisplay::MissileState missileState;
     InteractiveControls::UIState uiState;
+    AuthCode::AuthState authState;
+    float uiWeaponsPower = 0.5f; // Weapons power state
 };
 
 

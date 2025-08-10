@@ -1,7 +1,9 @@
 #pragma once
 
 #include <raylib.h>
+#include <memory>
 #include "InputHandler.h"
+#include "AuthCode.h"
 
 class SafetySystem;
 class DepthControl;
@@ -23,29 +25,28 @@ public:
         bool resetButtonLit = false;
     };
 
-    void update(float dt, UIState& uiState, InputHandler::InputState& inputState);
-    void drawInteractiveControls(Rectangle r, const UIState& uiState, const InputHandler::InputState& inputState);
+    void update(float dt, UIState& uiState, AuthCode::AuthState& authState);
+    void drawInteractiveControls(Rectangle r, const UIState& uiState, const AuthCode::AuthState& authState);
     void drawDepthControlInPanel(Rectangle depthPanelRect, const UIState& uiState);
 
 private:
     SimulationEngine& engine;
     SafetySystem* safety;
     DepthControl* depth;
+    std::unique_ptr<AuthCode> authCode;
     
     // UI Helper methods
     void updateDepthThrottle(UIState& uiState, Rectangle throttleRect);
-    void updateSafetyButtons(UIState& uiState, InputHandler::InputState& inputState, Rectangle r);
+    void updateSafetyButtons(UIState& uiState, Rectangle r, AuthCode::AuthState& authState);
     void drawDepthThrottle(Rectangle r, const UIState& uiState);
-    void drawSafetyStateButtons(Rectangle r, const UIState& uiState, const InputHandler::InputState& inputState);
+    void drawSafetyStateButtons(Rectangle r, const UIState& uiState);
     
     // Button interaction helpers
     bool isButtonPressed(Rectangle buttonRect);
     void drawLitButton(Rectangle buttonRect, const char* text, bool isLit, bool isActive, Color baseColor);
     
-    // Auth functionality that needs to be preserved
-    bool checkAllConditionsExceptAuth();
-    void processAuthRequest(InputHandler::InputState& inputState);
-    void processArmRequest(InputHandler::InputState& inputState);
-    void processLaunchRequest(InputHandler::InputState& inputState);
-    void processResetRequest(InputHandler::InputState& inputState);
+    // Safety button functionality
+    void processArmRequest();
+    void processLaunchRequest();
+    void processResetRequest();
 };
