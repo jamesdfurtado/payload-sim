@@ -15,7 +15,4 @@ public:
 
 private:
     SafetySystem* safety;
-    
-    const char* getPhaseString(const InputHandler::InputState& inputState);
-    void drawPhaseSpecificMessage(Rectangle r, const InputHandler::InputState& inputState);
 };

@@ -5,6 +5,7 @@
 #include "ui/SonarDisplay.h"
 #include "ui/InteractiveControls.h"
 #include "ui/UiController.h"
+#include "ui/LoggingSystem.h"
 #include "simulation/SimulationEngine.h"
 #include "systems/PowerSystem.h"
 #include "systems/SafetySystem.h"
@@ -34,6 +35,7 @@ protected:
         uiController = std::make_unique<UiController>(*engine, sonarSystem.get(), powerSystem.get(),
                                                      depthControl.get(), targetingSystem.get(), 
                                                      safetySystem.get(), environmentSystem.get());
+        logger = std::make_unique<LoggingSystem>();
     }
 
     std::unique_ptr<SimulationEngine> engine;
@@ -50,6 +52,7 @@ protected:
     std::unique_ptr<SonarDisplay> sonarDisplay;
     std::unique_ptr<InteractiveControls> interactiveControls;
     std::unique_ptr<UiController> uiController;
+    std::unique_ptr<LoggingSystem> logger;
 };
 
 TEST_F(UiComponentsTest, InputHandlerInitializesCorrectly) { // InputHandler can be created without errors
@@ -150,7 +153,7 @@ TEST_F(UiComponentsTest, InteractiveControlsCanBeUpdated) { // InteractiveContro
     InteractiveControls::UIState uiState;
     AuthCode::AuthState authState;
     
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState, *logger));
 }
 
 TEST_F(UiComponentsTest, InteractiveControlsCanBeDrawn) { // InteractiveControls draw method works
@@ -187,13 +190,13 @@ TEST_F(UiComponentsTest, DepthThrottleControlsDepthSystem) { // Depth throttle p
     
     // Test different throttle positions
     uiState.depthThrottleValue = 0.0f; // Full down
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState, *logger));
     
     uiState.depthThrottleValue = 1.0f; // Full up
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState, *logger));
     
     uiState.depthThrottleValue = 0.5f; // Neutral
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState, *logger));
 }
 
 TEST_F(UiComponentsTest, SafetyButtonsReflectSystemState) { // Safety buttons properly reflect safety system state
@@ -201,7 +204,7 @@ TEST_F(UiComponentsTest, SafetyButtonsReflectSystemState) { // Safety buttons pr
     AuthCode::AuthState authState;
     
     // Update UI state based on safety system
-    interactiveControls->update(0.016f, uiState, authState);
+    interactiveControls->update(0.016f, uiState, authState, *logger);
     
     // Initially in idle state, no buttons should be lit
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);

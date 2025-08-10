@@ -4,6 +4,7 @@
 #include <memory>
 #include "InputHandler.h"
 #include "AuthCode.h"
+#include "LoggingSystem.h"
 
 class SafetySystem;
 class DepthControl;
@@ -25,7 +26,7 @@ public:
         bool resetButtonLit = false;
     };
 
-    void update(float dt, UIState& uiState, AuthCode::AuthState& authState);
+    void update(float dt, UIState& uiState, AuthCode::AuthState& authState, LoggingSystem& logger);
     void drawInteractiveControls(Rectangle r, const UIState& uiState, const AuthCode::AuthState& authState);
     void drawDepthControlInPanel(Rectangle depthPanelRect, const UIState& uiState);
 
@@ -37,7 +38,7 @@ private:
     
     // UI Helper methods
     void updateDepthThrottle(UIState& uiState, Rectangle throttleRect);
-    void updateSafetyButtons(UIState& uiState, Rectangle r, AuthCode::AuthState& authState);
+    void updateSafetyButtons(UIState& uiState, Rectangle r, AuthCode::AuthState& authState, LoggingSystem& logger);
     void drawDepthThrottle(Rectangle r, const UIState& uiState);
     void drawSafetyStateButtons(Rectangle r, const UIState& uiState);
     

@@ -14,6 +14,7 @@
 #include "SonarDisplay.h"
 #include "InteractiveControls.h"
 #include "AuthCode.h"
+#include "LoggingSystem.h"
 
 class UiController {
 public:
@@ -44,6 +45,7 @@ private:
     std::unique_ptr<StatusPanel> statusPanel;
     std::unique_ptr<SonarDisplay> sonarDisplay;
     std::unique_ptr<InteractiveControls> interactiveControls;
+    std::unique_ptr<LoggingSystem> loggingSystem;
 
     // Component state
     InputHandler::InputState inputState;

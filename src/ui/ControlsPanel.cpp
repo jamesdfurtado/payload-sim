@@ -14,14 +14,7 @@ void ControlsPanel::drawControls(Rectangle r, const InputHandler::InputState& in
     DrawText("3) LAUNCH", (int)r.x + 10, (int)r.y + 118, 18, RAYWHITE);
     DrawText("4) RESET", (int)r.x + 10, (int)r.y + 142, 18, RAYWHITE);
     
-    // Show current launch phase
-    if (safety) {
-        const char* phaseStr = getPhaseString(inputState);
-        DrawText(TextFormat("Payload State: %s", phaseStr), (int)r.x + 10, (int)r.y + 170, 20, YELLOW);
-    }
-    
-    // Show phase-specific messages
-    drawPhaseSpecificMessage(r, inputState);
+    // Payload state and phase-specific messages are now handled by the centralized LoggingSystem
     
     // Draw auth input area
     drawAuthInput(r, inputState);
@@ -50,47 +43,6 @@ void ControlsPanel::drawAuthInput(Rectangle r, const InputHandler::InputState& i
     }
 }
 
-const char* ControlsPanel::getPhaseString(const InputHandler::InputState& inputState) {
-    if (!safety) return "UNKNOWN";
-    
-    switch (safety->getPhase()) {
-        case LaunchPhase::Idle: return "IDLE";
-        case LaunchPhase::Authorized: return "AUTHORIZED";
-        case LaunchPhase::Arming: return "ARMING";
-        case LaunchPhase::Armed: return "ARMED";
-        case LaunchPhase::Launching: return "LAUNCHING";
-        case LaunchPhase::Launched: return "LAUNCHED";
-        case LaunchPhase::Resetting: return (inputState.resetTimer > 0.0f ? "RESETTING..." : "RESET");
-        default: return "UNKNOWN";
-    }
-}
+// Phase string generation is now handled by the centralized LoggingSystem
 
-void ControlsPanel::drawPhaseSpecificMessage(Rectangle r, const InputHandler::InputState& inputState) {
-    if (safety) {
-        switch (safety->getPhase()) {
-            case LaunchPhase::Arming:
-                DrawText("Arming payload...", (int)r.x + 10, (int)r.y + 200, 18, LIGHTGRAY);
-                break;
-            case LaunchPhase::Launching:
-                DrawText("Launching payload...", (int)r.x + 10, (int)r.y + 200, 18, LIGHTGRAY);
-                break;
-            case LaunchPhase::Launched:
-                DrawText("Payload LAUNCHED!", (int)r.x + 10, (int)r.y + 200, 18, LIGHTGRAY);
-                break;
-            case LaunchPhase::Resetting:
-                if (!safety->getResetReason().empty()) {
-                    DrawText(TextFormat("System resetting: %s", safety->getResetReason().c_str()), (int)r.x + 10, (int)r.y + 200, 18, LIGHTGRAY);
-                } else {
-                    DrawText("System RESETTING...", (int)r.x + 10, (int)r.y + 200, 18, LIGHTGRAY);
-                }
-                break;
-            default:
-                if (!inputState.feedbackMessage.empty()) {
-                    DrawText(inputState.feedbackMessage.c_str(), (int)r.x + 10, (int)r.y + 200, 18, LIGHTGRAY);
-                }
-                break;
-        }
-    } else if (!inputState.feedbackMessage.empty()) {
-        DrawText(inputState.feedbackMessage.c_str(), (int)r.x + 10, (int)r.y + 200, 18, LIGHTGRAY);
-    }
-}
+// Phase-specific messages are now handled by the centralized LoggingSystem

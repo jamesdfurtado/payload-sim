@@ -12,7 +12,7 @@ InteractiveControls::InteractiveControls(SimulationEngine& engine, SafetySystem*
     authCode = std::make_unique<AuthCode>(engine, safety);
 }
 
-void InteractiveControls::update(float dt, UIState& uiState, AuthCode::AuthState& authState) {
+void InteractiveControls::update(float dt, UIState& uiState, AuthCode::AuthState& authState, LoggingSystem& logger) {
     // Update safety button lighting based on current state
     if (safety) {
         LaunchPhase phase = safety->getPhase();
@@ -24,7 +24,7 @@ void InteractiveControls::update(float dt, UIState& uiState, AuthCode::AuthState
     }
     
     // Update auth calculator
-    authCode->update(dt, authState);
+    authCode->update(dt, authState, logger);
     
     // Calculate UI rectangles for interactive elements
     Rectangle controlsRect = { 640, 380, 620, 320 };
@@ -35,7 +35,7 @@ void InteractiveControls::update(float dt, UIState& uiState, AuthCode::AuthState
     updateDepthThrottle(uiState, throttleRect);
     
     // Update safety buttons
-    updateSafetyButtons(uiState, controlsRect, authState);
+    updateSafetyButtons(uiState, controlsRect, authState, logger);
     
     // Apply depth throttle to depth control system
     if (depth) {
@@ -71,9 +71,10 @@ void InteractiveControls::updateDepthThrottle(UIState& uiState, Rectangle thrott
     uiState.depthThrottleSliderPos = { throttleRect.x + throttleRect.width / 2, sliderY };
 }
 
-void InteractiveControls::updateSafetyButtons(UIState& uiState, Rectangle r, AuthCode::AuthState& authState) {
+void InteractiveControls::updateSafetyButtons(UIState& uiState, Rectangle r, AuthCode::AuthState& authState, LoggingSystem& logger) {
     (void)uiState; // Suppress unused parameter warning
     (void)authState; // Suppress unused parameter warning
+    (void)logger; // Suppress unused parameter warning
     
     Rectangle authButton = { r.x + 20, r.y + 50, 110, 40 };
     Rectangle armButton = { r.x + 140, r.y + 50, 110, 40 };
@@ -83,7 +84,7 @@ void InteractiveControls::updateSafetyButtons(UIState& uiState, Rectangle r, Aut
     // Handle button clicks
     if (isButtonPressed(authButton)) {
         // Request auth code from AuthCode
-        authCode->requestAuthCode(authState);
+        authCode->requestAuthCode(authState, logger);
     }
     if (isButtonPressed(armButton)) {
         processArmRequest();
@@ -106,45 +107,7 @@ void InteractiveControls::drawInteractiveControls(Rectangle r, const UIState& ui
     // Draw auth calculator
     authCode->drawAuthCode(r, authState);
     
-    // Show current launch phase - positioned below buttons
-    if (safety) {
-        const char* phaseStr = "";
-        switch (safety->getPhase()) {
-            case LaunchPhase::Idle: phaseStr = "IDLE"; break;
-            case LaunchPhase::Authorized: phaseStr = "AUTHORIZED"; break;
-            case LaunchPhase::Arming: phaseStr = "ARMING"; break;
-            case LaunchPhase::Armed: phaseStr = "ARMED"; break;
-            case LaunchPhase::Launching: phaseStr = "LAUNCHING"; break;
-            case LaunchPhase::Launched: phaseStr = "LAUNCHED"; break;
-            case LaunchPhase::Resetting: phaseStr = "RESETTING"; break;
-            default: phaseStr = "UNKNOWN"; break;
-        }
-        DrawText(TextFormat("Payload State: %s", phaseStr), (int)r.x + 20, (int)r.y + 110, 18, YELLOW);
-    }
-    
-    // Show feedback messages - positioned below payload state
-    if (safety) {
-        switch (safety->getPhase()) {
-            case LaunchPhase::Arming:
-                DrawText("Arming payload...", (int)r.x + 20, (int)r.y + 140, 16, LIGHTGRAY);
-                break;
-            case LaunchPhase::Launching:
-                DrawText("Launching payload...", (int)r.x + 20, (int)r.y + 140, 16, LIGHTGRAY);
-                break;
-            case LaunchPhase::Launched:
-                DrawText("Payload LAUNCHED!", (int)r.x + 20, (int)r.y + 140, 16, LIGHTGRAY);
-                break;
-            case LaunchPhase::Resetting:
-                if (!safety->getResetReason().empty()) {
-                    DrawText(TextFormat("System resetting: %s", safety->getResetReason().c_str()), (int)r.x + 20, (int)r.y + 140, 16, LIGHTGRAY);
-                } else {
-                    DrawText("System RESETTING...", (int)r.x + 20, (int)r.y + 140, 16, LIGHTGRAY);
-                }
-                break;
-            default:
-                break;
-        }
-    }
+    // Payload state and feedback messages are now handled by the centralized LoggingSystem
 }
 
 void InteractiveControls::drawDepthThrottle(Rectangle r, const UIState& uiState) {

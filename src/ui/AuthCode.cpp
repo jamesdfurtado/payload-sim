@@ -10,10 +10,10 @@ AuthCode::AuthCode(SimulationEngine& engine, SafetySystem* safety)
     std::srand((unsigned int)std::time(nullptr));
 }
 
-void AuthCode::update(float dt, AuthState& authState) {
+void AuthCode::update(float dt, AuthState& authState, LoggingSystem& logger) {
     // Check if auth was requested via the AUTH button
     if (authState.authRequested) {
-        processAuthRequest(authState);
+        processAuthRequest(authState, logger);
         authState.authRequested = false; // Reset the flag
     }
     
@@ -24,18 +24,20 @@ void AuthCode::update(float dt, AuthState& authState) {
                    safety->getPhase() == LaunchPhase::Launched)) {
         if (authState.feedbackMessage == "Authorization granted, please ARM the payload.") {
             authState.feedbackMessage.clear();
+            logger.clearNonPersistentMessages();
         }
     }
     
     // Clear auth state when reset happens
     if (safety && safety->getPhase() == LaunchPhase::Resetting) {
         clearAuthState(authState);
+        logger.clearMessages();
     }
     
     // Handle calculator number pad input
     Rectangle baseRect = { 640, 380, 620, 320 };
     Rectangle inputRect = { baseRect.x + 20, baseRect.y + 180, 120, 28 };
-    Rectangle calcArea = { inputRect.x + 140, inputRect.y, 180, 120 };
+    Rectangle calcArea = { inputRect.x + 140, inputRect.y - 26, 180, 120 };
     
     // Number buttons (3x3 grid + 0 at bottom)
     int buttonSize = 35;
@@ -95,7 +97,7 @@ void AuthCode::drawAuthCode(Rectangle r, const AuthState& authState) {
     }
     
     // Draw calculator number pad
-    Rectangle calcArea = { authBox.x + 140, authBox.y, 180, 120 };
+    Rectangle calcArea = { authBox.x + 140, authBox.y - 26, 180, 120 };
     
     int buttonSize = 35;
     int spacing = 5;
@@ -147,10 +149,7 @@ void AuthCode::drawAuthCode(Rectangle r, const AuthState& authState) {
         DrawText("----", (int)codeBox.x + 35, (int)codeBox.y + 8, 24, DARKGRAY);
     }
     
-    // Show feedback messages
-    if (!authState.feedbackMessage.empty()) {
-        DrawText(authState.feedbackMessage.c_str(), (int)r.x + 20, (int)r.y + 130, 16, LIGHTGRAY);
-    }
+    // Feedback messages are now handled by the centralized LoggingSystem
     
 
 }
@@ -200,7 +199,7 @@ bool AuthCode::checkAllConditionsExceptAuth() {
            s.noFriendlyUnitsInBlastRadius && s.launchConditionsFavorable;
 }
 
-void AuthCode::processAuthRequest(AuthState& authState) {
+void AuthCode::processAuthRequest(AuthState& authState, LoggingSystem& logger) {
     if (checkAllConditionsExceptAuth()) {
         // Generate random 4-digit code
         int code = 1000 + std::rand() % 9000;
@@ -208,8 +207,27 @@ void AuthCode::processAuthRequest(AuthState& authState) {
         if (safety) safety->setChallengeCode(authState.challengeCode);
         authState.inputCode.clear();
         authState.feedbackMessage = "Enter the AUTH code shown below.";
+        logger.addInfo("Enter the AUTH code shown below.", true);
     } else {
-        authState.feedbackMessage = "Cannot request AUTH: All conditions (except Authorization) must be met.";
+        // Generate detailed feedback about which conditions are not met
+        auto& s = engine.getState();
+        std::string missingConditions = "";
+        
+        if (!s.targetValidated) missingConditions += "Target validation, ";
+        if (!s.targetAcquired) missingConditions += "Target acquisition, ";
+        if (!s.depthClearanceMet) missingConditions += "Depth clearance, ";
+        if (!s.launchTubeIntegrity) missingConditions += "Launch tube integrity, ";
+        if (!s.powerSupplyStable) missingConditions += "Power supply stability, ";
+        if (!s.noFriendlyUnitsInBlastRadius) missingConditions += "No friendly units in blast radius, ";
+        if (!s.launchConditionsFavorable) missingConditions += "Launch conditions, ";
+        
+        // Remove trailing comma and space
+        if (!missingConditions.empty()) {
+            missingConditions = missingConditions.substr(0, missingConditions.length() - 2);
+        }
+        
+        authState.feedbackMessage = "Cannot request AUTH. Missing conditions: " + missingConditions + ".";
+        logger.addError("Cannot request AUTH. Missing: " + missingConditions, false);
     }
 }
 
@@ -223,11 +241,31 @@ void AuthCode::addDigit(AuthState& authState, int digit) {
                 if (checkAllConditionsExceptAuth()) {
                     if (safety) safety->requestAuthorizationCode(authState.inputCode.c_str());
                     authState.feedbackMessage = "Authorization granted, please ARM the payload.";
+                    // Note: We can't access logger here, so we'll keep the old feedback message for now
+                    // The success message will be shown through the existing feedback message
                 } else {
-                    authState.feedbackMessage = "Cannot authorize: All conditions must be met.";
+                    // Generate detailed feedback about which conditions are not met
+                    auto& s = engine.getState();
+                    std::string missingConditions = "";
+                    
+                    if (!s.targetValidated) missingConditions += "Target validation, ";
+                    if (!s.targetAcquired) missingConditions += "Target acquisition, ";
+                    if (!s.depthClearanceMet) missingConditions += "Depth clearance, ";
+                    if (!s.launchTubeIntegrity) missingConditions += "Launch tube integrity, ";
+                    if (!s.powerSupplyStable) missingConditions += "Power supply stability, ";
+                    if (!s.noFriendlyUnitsInBlastRadius) missingConditions += "No friendly units in blast radius, ";
+                    if (!s.launchConditionsFavorable) missingConditions += "Launch conditions, ";
+                    
+                    // Remove trailing comma and space
+                    if (!missingConditions.empty()) {
+                        missingConditions = missingConditions.substr(0, missingConditions.length() - 2);
+                    }
+                    
+                    authState.feedbackMessage = "Cannot authorize. Missing conditions: " + missingConditions + ".";
                 }
             } else {
                 authState.feedbackMessage = "Incorrect AUTH code.";
+                // Note: We can't access logger here, so we'll keep the old feedback message for now
             }
         }
     }
@@ -239,7 +277,7 @@ void AuthCode::deleteLastDigit(AuthState& authState) {
     }
 }
 
-void AuthCode::requestAuthCode(AuthState& authState) {
+void AuthCode::requestAuthCode(AuthState& authState, LoggingSystem& logger) {
     // This method is called when the AUTH button is pressed
     // It will trigger the auth request process
     authState.authRequested = true;

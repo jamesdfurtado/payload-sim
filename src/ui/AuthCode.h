@@ -3,6 +3,7 @@
 #include <raylib.h>
 #include <string>
 #include "InputHandler.h"
+#include "LoggingSystem.h"
 
 class SafetySystem;
 class SimulationEngine;
@@ -20,9 +21,9 @@ public:
         float resetTimer = 0.0f;            // Timer for reset operations
     };
 
-    void update(float dt, AuthState& authState);
+    void update(float dt, AuthState& authState, LoggingSystem& logger);
     void drawAuthCode(Rectangle r, const AuthState& authState);
-    void requestAuthCode(AuthState& authState);
+    void requestAuthCode(AuthState& authState, LoggingSystem& logger);
     void clearAuthState(AuthState& authState);
 
 private:
@@ -36,7 +37,7 @@ private:
     
     // Auth logic
     bool checkAllConditionsExceptAuth();
-    void processAuthRequest(AuthState& authState);
+    void processAuthRequest(AuthState& authState, LoggingSystem& logger);
     void addDigit(AuthState& authState, int digit);
     void deleteLastDigit(AuthState& authState);
 };
