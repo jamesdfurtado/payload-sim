@@ -38,6 +38,7 @@ public:
 
     void registerSystem(std::shared_ptr<ISimSystem> system);
     void update(float dt);
+    void randomizeDepthScenario(); // Randomize starting and target depths
 
     SimulationState& getState();
     const SimulationState& getState() const;
