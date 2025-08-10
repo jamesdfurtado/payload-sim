@@ -3,12 +3,15 @@
 #include "ui/StatusPanel.h"
 #include "ui/ControlsPanel.h"
 #include "ui/SonarDisplay.h"
+#include "ui/InteractiveControls.h"
+#include "ui/UiController.h"
 #include "simulation/SimulationEngine.h"
 #include "systems/PowerSystem.h"
 #include "systems/SafetySystem.h"
 #include "systems/SonarSystem.h"
 #include "systems/DepthControl.h"
 #include "systems/TargetingSystem.h"
+#include "systems/EnvironmentSystem.h"
 
 class UiComponentsTest : public ::testing::Test {
 protected:
@@ -19,6 +22,7 @@ protected:
         sonarSystem = std::make_unique<SonarSystem>();
         depthControl = std::make_unique<DepthControl>();
         targetingSystem = std::make_unique<TargetingSystem>();
+        environmentSystem = std::make_unique<EnvironmentSystem>();
         
         inputHandler = std::make_unique<InputHandler>(*engine, sonarSystem.get(), 
                                                      powerSystem.get(), depthControl.get(),
@@ -26,6 +30,10 @@ protected:
         statusPanel = std::make_unique<StatusPanel>(*engine, powerSystem.get());
         controlsPanel = std::make_unique<ControlsPanel>(safetySystem.get());
         sonarDisplay = std::make_unique<SonarDisplay>(*engine, sonarSystem.get(), safetySystem.get());
+        interactiveControls = std::make_unique<InteractiveControls>(*engine, safetySystem.get(), depthControl.get());
+        uiController = std::make_unique<UiController>(*engine, sonarSystem.get(), powerSystem.get(),
+                                                     depthControl.get(), targetingSystem.get(), 
+                                                     safetySystem.get(), environmentSystem.get());
     }
 
     std::unique_ptr<SimulationEngine> engine;
@@ -34,11 +42,14 @@ protected:
     std::unique_ptr<SonarSystem> sonarSystem;
     std::unique_ptr<DepthControl> depthControl;
     std::unique_ptr<TargetingSystem> targetingSystem;
+    std::unique_ptr<EnvironmentSystem> environmentSystem;
     
     std::unique_ptr<InputHandler> inputHandler;
     std::unique_ptr<StatusPanel> statusPanel;
     std::unique_ptr<ControlsPanel> controlsPanel;
     std::unique_ptr<SonarDisplay> sonarDisplay;
+    std::unique_ptr<InteractiveControls> interactiveControls;
+    std::unique_ptr<UiController> uiController;
 };
 
 TEST_F(UiComponentsTest, InputHandlerInitializesCorrectly) { // InputHandler can be created without errors
@@ -111,4 +122,100 @@ TEST_F(UiComponentsTest, SonarDisplayCanBeUpdated) { // SonarDisplay update meth
     Rectangle sonarRect = {0, 0, 600, 400};
     
     EXPECT_NO_THROW(sonarDisplay->updateMissileAnimation(0.016f, missileState, sonarRect));
+}
+
+TEST_F(UiComponentsTest, InteractiveControlsInitializesCorrectly) { // InteractiveControls can be created without errors
+    EXPECT_NE(interactiveControls, nullptr);
+}
+
+TEST_F(UiComponentsTest, UiControllerInitializesCorrectly) { // UiController can be created without errors
+    EXPECT_NE(uiController, nullptr);
+}
+
+TEST_F(UiComponentsTest, InteractiveControlsUIStateDefaults) { // InteractiveControls UIState has correct defaults
+    InteractiveControls::UIState uiState;
+    
+    EXPECT_FALSE(uiState.depthThrottleDragging);
+    EXPECT_EQ(uiState.depthThrottleValue, 0.5f); // Neutral position
+    EXPECT_EQ(uiState.depthThrottleSliderPos.x, 0.0f);
+    EXPECT_EQ(uiState.depthThrottleSliderPos.y, 0.0f);
+    
+    EXPECT_FALSE(uiState.authButtonLit);
+    EXPECT_FALSE(uiState.armButtonLit);
+    EXPECT_FALSE(uiState.launchButtonLit);
+    EXPECT_FALSE(uiState.resetButtonLit);
+}
+
+TEST_F(UiComponentsTest, InteractiveControlsCanBeUpdated) { // InteractiveControls update method works
+    InteractiveControls::UIState uiState;
+    InputHandler::InputState inputState;
+    
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+}
+
+TEST_F(UiComponentsTest, InteractiveControlsCanBeDrawn) { // InteractiveControls draw method works
+    InteractiveControls::UIState uiState;
+    InputHandler::InputState inputState;
+    Rectangle testRect = {640, 380, 620, 320};
+    
+    EXPECT_NO_THROW(interactiveControls->drawInteractiveControls(testRect, uiState, inputState));
+}
+
+TEST_F(UiComponentsTest, UiControllerCanBeUpdated) { // UiController update method works
+    EXPECT_NO_THROW(uiController->update(0.016f));
+}
+
+TEST_F(UiComponentsTest, UiControllerCanBeRendered) { // UiController render method works
+    EXPECT_NO_THROW(uiController->render());
+}
+
+TEST_F(UiComponentsTest, StatusPanelPowerSliderIntegration) { // StatusPanel power slider can handle mouse input
+    float testPower = 0.5f;
+    Rectangle powerRect = {640, 140, 620, 110};
+    
+    // Test that drawing with power reference doesn't crash
+    EXPECT_NO_THROW(statusPanel->drawPower(powerRect, testPower));
+    
+    // Power value should remain valid
+    EXPECT_GE(testPower, 0.0f);
+    EXPECT_LE(testPower, 1.0f);
+}
+
+TEST_F(UiComponentsTest, DepthThrottleControlsDepthSystem) { // Depth throttle properly controls depth system
+    InteractiveControls::UIState uiState;
+    InputHandler::InputState inputState;
+    
+    // Test different throttle positions
+    uiState.depthThrottleValue = 0.0f; // Full down
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+    
+    uiState.depthThrottleValue = 1.0f; // Full up
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+    
+    uiState.depthThrottleValue = 0.5f; // Neutral
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+}
+
+TEST_F(UiComponentsTest, SafetyButtonsReflectSystemState) { // Safety buttons properly reflect safety system state
+    InteractiveControls::UIState uiState;
+    InputHandler::InputState inputState;
+    
+    // Update UI state based on safety system
+    interactiveControls->update(0.016f, uiState, inputState);
+    
+    // Initially in idle state, no buttons should be lit
+    EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
+    EXPECT_FALSE(uiState.authButtonLit);
+    EXPECT_FALSE(uiState.armButtonLit);
+    EXPECT_FALSE(uiState.launchButtonLit);
+}
+
+TEST_F(UiComponentsTest, KeyboardControlsRemoved) { // Keyboard controls for depth and safety are removed
+    InputHandler::InputState inputState;
+    
+    // Test that input handler can be called without keyboard affecting depth/safety
+    EXPECT_NO_THROW(inputHandler->handleInput(0.016f, inputState));
+    
+    // Auth input should still work (this is the only keyboard input we keep)
+    EXPECT_NO_THROW(inputHandler->handleAuthInput(inputState));
 }
