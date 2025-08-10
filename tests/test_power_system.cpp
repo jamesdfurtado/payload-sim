@@ -14,7 +14,6 @@ protected:
     SimulationState state;
 };
 
-
 TEST_F(PowerSystemTest, InitialWeaponsPowerIsCorrect) { // Initial weapons power is 50%
     EXPECT_EQ(powerSystem->getWeaponsPower(), 0.5f);
 }

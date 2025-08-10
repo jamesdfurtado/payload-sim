@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
-#include "ui/InteractiveControls.h"
-#include "ui/InputHandler.h"
-#include "simulation/SimulationEngine.h"
-#include "systems/SafetySystem.h"
-#include "systems/DepthControl.h"
+#include <memory>
+#include "../src/ui/InteractiveControls.h"
+#include "../src/systems/SafetySystem.h"
+#include "../src/systems/DepthControl.h"
+#include "../src/simulation/SimulationEngine.h"
+#include "../src/ui/AuthCode.h"
 
 // Note: Using real Raylib functions for testing - no mocking needed
 
@@ -13,7 +14,6 @@ protected:
         engine = std::make_unique<SimulationEngine>();
         safetySystem = std::make_unique<SafetySystem>();
         depthControl = std::make_unique<DepthControl>();
-        
         interactiveControls = std::make_unique<InteractiveControls>(*engine, safetySystem.get(), depthControl.get());
     }
 
@@ -25,12 +25,8 @@ protected:
 
 TEST_F(InteractiveControlsTest, UIStateInitializesWithDefaults) {
     InteractiveControls::UIState uiState;
-    
     EXPECT_FALSE(uiState.depthThrottleDragging);
-    EXPECT_EQ(uiState.depthThrottleValue, 0.5f); // Neutral position
-    EXPECT_EQ(uiState.depthThrottleSliderPos.x, 0.0f);
-    EXPECT_EQ(uiState.depthThrottleSliderPos.y, 0.0f);
-    
+    EXPECT_FLOAT_EQ(uiState.depthThrottleValue, 0.5f);
     EXPECT_FALSE(uiState.authButtonLit);
     EXPECT_FALSE(uiState.armButtonLit);
     EXPECT_FALSE(uiState.launchButtonLit);
@@ -43,27 +39,27 @@ TEST_F(InteractiveControlsTest, InteractiveControlsInitializesCorrectly) {
 
 TEST_F(InteractiveControlsTest, DepthThrottleValueConstraints) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
     // Test that throttle value stays within bounds
     uiState.depthThrottleValue = -0.5f; // Below minimum
-    interactiveControls->update(0.016f, uiState, inputState);
+    interactiveControls->update(0.016f, uiState, authState);
     // The value should be clamped in updateDepthThrottle, but we need to test the behavior
     
     uiState.depthThrottleValue = 1.5f; // Above maximum
-    interactiveControls->update(0.016f, uiState, inputState);
+    interactiveControls->update(0.016f, uiState, authState);
     // Similar constraint testing
     
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
 }
 
 TEST_F(InteractiveControlsTest, SafetyButtonLightingFollowsPhases) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
     // Test initial idle state
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
-    interactiveControls->update(0.016f, uiState, inputState);
+    interactiveControls->update(0.016f, uiState, authState);
     EXPECT_FALSE(uiState.authButtonLit);
     EXPECT_FALSE(uiState.armButtonLit);
     EXPECT_FALSE(uiState.launchButtonLit);
@@ -73,159 +69,162 @@ TEST_F(InteractiveControlsTest, SafetyButtonLightingFollowsPhases) {
     safetySystem->requestAuthorizationCode("test"); // This might not work without proper setup
     // We'll need to set up the simulation state properly for this to work
     
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
 }
 
 TEST_F(InteractiveControlsTest, UpdateCanBeCalledWithoutErrors) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
-    EXPECT_NO_THROW(interactiveControls->update(0.033f, uiState, inputState));
-    EXPECT_NO_THROW(interactiveControls->update(0.0f, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
+    EXPECT_NO_THROW(interactiveControls->update(0.033f, uiState, authState));
+    EXPECT_NO_THROW(interactiveControls->update(0.0f, uiState, authState));
 }
 
 TEST_F(InteractiveControlsTest, DrawInteractiveControlsCanBeCalled) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     Rectangle testRect = {640, 380, 620, 320};
     
     // Drawing functions typically don't throw in Raylib, but we test that our code doesn't crash
-    EXPECT_NO_THROW(interactiveControls->drawInteractiveControls(testRect, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->drawInteractiveControls(testRect, uiState, authState));
 }
 
 TEST_F(InteractiveControlsTest, DepthThrottleControlsDepthSystem) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
     // Set different throttle values and verify they're applied to depth system
     uiState.depthThrottleValue = 0.0f; // Full down
-    interactiveControls->update(0.016f, uiState, inputState);
+    interactiveControls->update(0.016f, uiState, authState);
     // We could check depthControl's internal state if it had getters
     
     uiState.depthThrottleValue = 1.0f; // Full up
-    interactiveControls->update(0.016f, uiState, inputState);
+    interactiveControls->update(0.016f, uiState, authState);
     
     uiState.depthThrottleValue = 0.5f; // Neutral
-    interactiveControls->update(0.016f, uiState, inputState);
+    interactiveControls->update(0.016f, uiState, authState);
     
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
 }
 
 TEST_F(InteractiveControlsTest, ResetTimerHandling) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
     // Test reset timer countdown
-    inputState.resetTimer = 1.0f;
+    authState.resetTimer = 1.0f;
     safetySystem->reset(); // Put system in resetting state
     
-    float initialTimer = inputState.resetTimer;
-    interactiveControls->update(0.5f, uiState, inputState);
+    float initialTimer = authState.resetTimer;
+    interactiveControls->update(0.5f, uiState, authState);
     
     // Timer should have decreased
-    EXPECT_LT(inputState.resetTimer, initialTimer);
+    EXPECT_LT(authState.resetTimer, initialTimer);
     
     // Test timer reaching zero
-    inputState.resetTimer = 0.1f;
-    interactiveControls->update(0.2f, uiState, inputState);
-    EXPECT_LE(inputState.resetTimer, 0.0f);
+    authState.resetTimer = 0.1f;
+    interactiveControls->update(0.2f, uiState, authState);
+    EXPECT_LE(authState.resetTimer, 0.0f);
 }
 
 TEST_F(InteractiveControlsTest, AuthInputPreservation) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
     // When auth box is focused, other controls should be ignored
-    inputState.authBoxFocused = true;
-    interactiveControls->update(0.016f, uiState, inputState);
+    authState.authBoxFocused = true;
+    authState.inputCode = "1234";
     
-    // Should return early without processing other controls
-    EXPECT_TRUE(inputState.authBoxFocused); // Should remain focused
+    // Simulate some time passing
+    interactiveControls->update(0.016f, uiState, authState);
+    
+    // Auth input should be preserved
+    EXPECT_EQ(authState.inputCode, "1234");
 }
 
-// Test safety system progression
 TEST_F(InteractiveControlsTest, SafetySystemProgression) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
-    // Setup simulation state for authorization
-    auto& simState = engine->getState();
-    simState.targetValidated = true;
-    simState.targetAcquired = true;
-    simState.depthClearanceMet = true;
-    simState.launchTubeIntegrity = true;
-    simState.powerSupplyStable = true;
-    simState.noFriendlyUnitsInBlastRadius = true;
-    simState.launchConditionsFavorable = true;
+    // Test the complete safety sequence progression
+    EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
     
-    // Update to apply the lighting
-    interactiveControls->update(0.016f, uiState, inputState);
+    // Set up challenge code and authorize
+    safetySystem->setChallengeCode("1234");
+    safetySystem->requestAuthorizationCode("1234");
     
-    // Initial state should have no buttons lit
-    EXPECT_FALSE(uiState.authButtonLit);
+    // Update to process the authorization
+    interactiveControls->update(0.016f, uiState, authState);
     
-    // After authorization, auth button should light up
-    if (safetySystem->getPhase() != LaunchPhase::Idle) {
-        EXPECT_TRUE(uiState.authButtonLit);
+    // Should now be in authorized state
+    EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Authorized);
+    
+    // Arm the system
+    safetySystem->arm();
+    interactiveControls->update(0.016f, uiState, authState);
+    
+    // Should be arming
+    EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Arming);
+    
+    // Wait for arming to complete
+    for (int i = 0; i < 200; i++) { // 2 seconds at 0.01 dt
+        interactiveControls->update(0.01f, uiState, authState);
     }
+    
+    // Should now be armed
+    EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Armed);
 }
 
-// Test edge cases and error conditions
 TEST_F(InteractiveControlsTest, NullSystemHandling) {
-    // Test with null safety and depth systems
-    auto nullInteractiveControls = std::make_unique<InteractiveControls>(*engine, nullptr, nullptr);
-    
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
-    // Should not crash with null systems
-    EXPECT_NO_THROW(nullInteractiveControls->update(0.016f, uiState, inputState));
-    EXPECT_NO_THROW(nullInteractiveControls->drawInteractiveControls({0, 0, 100, 100}, uiState, inputState));
+    // Create controls with null systems
+    InteractiveControls nullControls(*engine, nullptr, nullptr);
+    
+    // Should not crash
+    EXPECT_NO_THROW(nullControls.update(0.016f, uiState, authState));
+    EXPECT_NO_THROW(nullControls.drawInteractiveControls({0, 0, 100, 100}, uiState, authState));
 }
 
 TEST_F(InteractiveControlsTest, LargeTimeDelta) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
-    // Test with unusually large time delta
-    EXPECT_NO_THROW(interactiveControls->update(1.0f, uiState, inputState));
-    EXPECT_NO_THROW(interactiveControls->update(10.0f, uiState, inputState));
+    // Test with large time delta
+    EXPECT_NO_THROW(interactiveControls->update(1.0f, uiState, authState));
+    EXPECT_NO_THROW(interactiveControls->update(10.0f, uiState, authState));
 }
 
 TEST_F(InteractiveControlsTest, ZeroTimeDelta) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
     // Test with zero time delta
-    EXPECT_NO_THROW(interactiveControls->update(0.0f, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->update(0.0f, uiState, authState));
 }
 
-// Test specific button lighting logic
 class InteractiveControlsButtonTest : public InteractiveControlsTest {
 protected:
     void SetUp() override {
         InteractiveControlsTest::SetUp();
-        
-        // Setup a fully operational simulation state
-        auto& simState = engine->getState();
-        simState.targetValidated = true;
-        simState.targetAcquired = true;
-        simState.depthClearanceMet = true;
-        simState.launchTubeIntegrity = true;
-        simState.powerSupplyStable = true;
-        simState.noFriendlyUnitsInBlastRadius = true;
-        simState.launchConditionsFavorable = true;
-        simState.canLaunchAuthorized = false; // Will be set by safety system
-        simState.payloadSystemOperational = false; // Will be set by safety system
+        // Set up simulation state to allow progression through safety phases
+        auto& state = engine->getState();
+        state.targetValidated = true;
+        state.targetAcquired = true;
+        state.depthClearanceMet = true;
+        state.launchTubeIntegrity = true;
+        state.powerSupplyStable = true;
+        state.noFriendlyUnitsInBlastRadius = true;
+        state.launchConditionsFavorable = true;
     }
 };
 
 TEST_F(InteractiveControlsButtonTest, ButtonLightingProgression) {
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
-    // Test each phase progression
     struct PhaseTest {
         LaunchPhase phase;
         bool expectedAuth;
@@ -234,24 +233,79 @@ TEST_F(InteractiveControlsButtonTest, ButtonLightingProgression) {
         bool expectedReset;
     };
     
-    PhaseTest tests[] = {
+    std::vector<PhaseTest> tests = {
         {LaunchPhase::Idle, false, false, false, false},
-        {LaunchPhase::Authorized, true, false, false, false},
-        {LaunchPhase::Arming, true, true, false, false},
-        {LaunchPhase::Armed, true, true, false, false},
-        {LaunchPhase::Launching, true, true, true, false},
-        {LaunchPhase::Launched, true, true, true, false},
+        {LaunchPhase::Authorized, true, false, false, true},
+        {LaunchPhase::Arming, true, true, false, true},
+        {LaunchPhase::Armed, true, true, false, true},
+        {LaunchPhase::Launching, true, true, true, true},
+        {LaunchPhase::Launched, true, true, true, true},
         {LaunchPhase::Resetting, false, false, false, true}
     };
     
     for (const auto& test : tests) {
-        // We can't easily force the safety system to specific phases without 
-        // going through the proper state transitions, so we'll test the 
-        // update logic that reads the current phase
-        interactiveControls->update(0.016f, uiState, inputState);
+        // Force the safety system into the test phase
+        switch (test.phase) {
+            case LaunchPhase::Authorized:
+                safetySystem->setChallengeCode("1234");
+                safetySystem->requestAuthorizationCode("1234");
+                break;
+            case LaunchPhase::Arming:
+                safetySystem->setChallengeCode("1234");
+                safetySystem->requestAuthorizationCode("1234");
+                safetySystem->arm();
+                break;
+            case LaunchPhase::Armed:
+                safetySystem->setChallengeCode("1234");
+                safetySystem->requestAuthorizationCode("1234");
+                safetySystem->arm();
+                // Wait for arming to complete
+                for (int i = 0; i < 200; i++) {
+                    safetySystem->update(engine->getState(), 0.01f);
+                }
+                break;
+            case LaunchPhase::Launching:
+                safetySystem->setChallengeCode("1234");
+                safetySystem->requestAuthorizationCode("1234");
+                safetySystem->arm();
+                // Wait for arming to complete
+                for (int i = 0; i < 200; i++) {
+                    safetySystem->update(engine->getState(), 0.01f);
+                }
+                safetySystem->launch();
+                break;
+            case LaunchPhase::Launched:
+                safetySystem->setChallengeCode("1234");
+                safetySystem->requestAuthorizationCode("1234");
+                safetySystem->arm();
+                // Wait for arming to complete
+                for (int i = 0; i < 200; i++) {
+                    safetySystem->update(engine->getState(), 0.01f);
+                }
+                safetySystem->launch();
+                // Wait for launching to complete
+                for (int i = 0; i < 100; i++) {
+                    safetySystem->update(engine->getState(), 0.01f);
+                }
+                break;
+            case LaunchPhase::Resetting:
+                safetySystem->reset();
+                break;
+            default:
+                break;
+        }
         
-        // The actual phase checking happens in the update method
-        // We can at least verify the update doesn't crash
-        EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+        // Update interactive controls to reflect the new state
+        interactiveControls->update(0.016f, uiState, authState);
+        
+        // Verify button lighting matches expected state
+        EXPECT_EQ(uiState.authButtonLit, test.expectedAuth) 
+            << "Auth button lighting incorrect for phase " << static_cast<int>(test.phase);
+        EXPECT_EQ(uiState.armButtonLit, test.expectedArm)
+            << "Arm button lighting incorrect for phase " << static_cast<int>(test.phase);
+        EXPECT_EQ(uiState.launchButtonLit, test.expectedLaunch)
+            << "Launch button lighting incorrect for phase " << static_cast<int>(test.phase);
+        EXPECT_EQ(uiState.resetButtonLit, test.expectedReset)
+            << "Reset button lighting incorrect for phase " << static_cast<int>(test.phase);
     }
 }

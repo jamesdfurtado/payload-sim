@@ -148,17 +148,17 @@ TEST_F(UiComponentsTest, InteractiveControlsUIStateDefaults) { // InteractiveCon
 
 TEST_F(UiComponentsTest, InteractiveControlsCanBeUpdated) { // InteractiveControls update method works
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
 }
 
 TEST_F(UiComponentsTest, InteractiveControlsCanBeDrawn) { // InteractiveControls draw method works
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     Rectangle testRect = {640, 380, 620, 320};
     
-    EXPECT_NO_THROW(interactiveControls->drawInteractiveControls(testRect, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->drawInteractiveControls(testRect, uiState, authState));
 }
 
 TEST_F(UiComponentsTest, UiControllerCanBeUpdated) { // UiController update method works
@@ -183,25 +183,25 @@ TEST_F(UiComponentsTest, StatusPanelPowerSliderIntegration) { // StatusPanel pow
 
 TEST_F(UiComponentsTest, DepthThrottleControlsDepthSystem) { // Depth throttle properly controls depth system
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
     // Test different throttle positions
     uiState.depthThrottleValue = 0.0f; // Full down
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
     
     uiState.depthThrottleValue = 1.0f; // Full up
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
     
     uiState.depthThrottleValue = 0.5f; // Neutral
-    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, inputState));
+    EXPECT_NO_THROW(interactiveControls->update(0.016f, uiState, authState));
 }
 
 TEST_F(UiComponentsTest, SafetyButtonsReflectSystemState) { // Safety buttons properly reflect safety system state
     InteractiveControls::UIState uiState;
-    InputHandler::InputState inputState;
+    AuthCode::AuthState authState;
     
     // Update UI state based on safety system
-    interactiveControls->update(0.016f, uiState, inputState);
+    interactiveControls->update(0.016f, uiState, authState);
     
     // Initially in idle state, no buttons should be lit
     EXPECT_EQ(safetySystem->getPhase(), LaunchPhase::Idle);
