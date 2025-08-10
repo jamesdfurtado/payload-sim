@@ -1,8 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <string>
-#include <vector>
 #include <raylib.h>
 #include "../simulation/SimulationEngine.h"
 #include "../systems/SonarSystem.h"
@@ -11,6 +9,10 @@
 #include "../systems/TargetingSystem.h"
 #include "../systems/SafetySystem.h"
 #include "../systems/EnvironmentSystem.h"
+#include "InputHandler.h"
+#include "StatusPanel.h"
+#include "ControlsPanel.h"
+#include "SonarDisplay.h"
 
 class UiController {
 public:
@@ -27,7 +29,8 @@ public:
 
 private:
     SimulationEngine& engine;
-
+    
+    // Component dependencies
     SonarSystem* sonar = nullptr;
     PowerSystem* power = nullptr;
     DepthControl* depth = nullptr;
@@ -35,38 +38,15 @@ private:
     SafetySystem* safety = nullptr;
     EnvironmentSystem* environment = nullptr;
 
-    // UI state
-    float uiWeaponsPower = 0.5f;
-    std::string feedbackMessage;
-    std::string authCodeInput;
-    bool awaitingAuthCode = false;
-    bool authBoxFocused = false;
-    std::string authChallengeCode;
-    float resetTimer = 0.0f;
-    bool localAuthGranted = false;
+    // UI Components
+    std::unique_ptr<InputHandler> inputHandler;
+    std::unique_ptr<StatusPanel> statusPanel;
+    std::unique_ptr<ControlsPanel> controlsPanel;
+    std::unique_ptr<SonarDisplay> sonarDisplay;
 
-    // Missile animation state
-    bool missileActive = false;
-    Vector2 missilePos{0,0};
-    Vector2 missileVel{0,0};
-    Vector2 missileTarget{0,0};
-    std::vector<Vector2> missileTrail;
-    float missileProgress = 0.0f;
-    float missileExplosionTimer = 0.0f;
-    int missileTargetIdx = -1;
-
-    // Helpers
-    void drawStatusLights(const SimulationState& s, Rectangle r);
-    void drawPower(Rectangle r);
-    void drawDepth(Rectangle r);
-    void drawSonar(Rectangle r);
-    void drawControls(Rectangle r);
-
-    Vector2 worldToScreen(Vector2 p, Rectangle r);
-    Vector2 screenToWorld(Vector2 p, Rectangle r);
-
-    static constexpr float MISSILE_SPEED = 200.0f;
-    static constexpr float EXPLOSION_DURATION = 0.6f;
+    // Component state
+    InputHandler::InputState inputState;
+    SonarDisplay::MissileState missileState;
 };
 
 
