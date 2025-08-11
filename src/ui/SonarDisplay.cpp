@@ -88,6 +88,7 @@ void SonarDisplay::drawSonar(Rectangle r, const MissileState& missileState) {
     DrawText("Sonar", (int)r.x + 10, (int)r.y + 8, 20, SKYBLUE);
 
     drawSonarGrid(r);
+    drawCrossHair(r);
     drawSubmarineIcon(r);
     drawSonarContacts(r);
     drawTargetLock(r);
@@ -179,18 +180,24 @@ void SonarDisplay::drawExplosion(const MissileState& missileState) {
 }
 
 void SonarDisplay::drawSonarGrid(Rectangle r) {
-    // Draw subtle grid lines for sonar display
-    Color gridColor = Fade(SKYBLUE, 0.15f); // Very subtle blue grid
-    
-    // Draw concentric circles (range rings) every 100 pixels
+    Color gridColor = Fade(SKYBLUE, 0.15f);
+    Vector2 center = {r.x + r.width/2.0f, r.y + r.height/2.0f};
     int maxRadius = (int)std::min(r.width, r.height) / 2;
-    for (int radius = 50; radius < maxRadius; radius += 50) {
-        Vector2 center = {r.x + r.width/2, r.y + r.height/2};
+
+    // Enable scissor test to clip circles to sonar boundaries
+    BeginScissorMode((int)r.x, (int)r.y, (int)r.width, (int)r.height);
+    
+    for (int radius = 50; radius <= maxRadius + 100; radius += 50) {
         DrawCircleLines((int)center.x, (int)center.y, radius, gridColor);
     }
     
+    EndScissorMode();
+}
+
+void SonarDisplay::drawCrossHair(Rectangle r) {
     // Draw cross-hair lines (bearing lines)
-    Vector2 center = {r.x + r.width/2, r.y + r.height/2};
+    Color gridColor = Fade(SKYBLUE, 0.15f); // Very subtle blue grid
+    Vector2 center = {r.x + r.width/2.0f, r.y + r.height/2.0f};
     
     // Vertical line
     DrawLine((int)center.x, (int)r.y, (int)center.x, (int)(r.y + r.height), gridColor);

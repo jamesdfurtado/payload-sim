@@ -40,6 +40,7 @@ private:
 
     void drawSubmarineIcon(Rectangle r);
     void drawSonarGrid(Rectangle r);
+    void drawCrossHair(Rectangle r);
     void drawSonarContacts(Rectangle r);
     void drawTargetLock(Rectangle r);
     void drawMissile(const MissileState& missileState);
