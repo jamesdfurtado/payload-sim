@@ -91,6 +91,18 @@ void SonarSystem::spawnContactsIfNeeded() {
         contactManager.spawnContact();
     }
     
+    // If there are no enemies on the board, force-spawn one (up to the cap)
+    {
+        bool enemyPresent = false;
+        const auto& contacts = contactManager.getActiveContacts();
+        for (const auto& c : contacts) {
+            if (c.type == ContactType::EnemySub) { enemyPresent = true; break; }
+        }
+        if (!enemyPresent && contactManager.getContactCount() < 20) {
+            contactManager.spawnContact();
+        }
+    }
+
     if (spawnTimer <= 0.0f && contactManager.getContactCount() < 20) {
         contactManager.spawnContact();
         spawnTimer = 1.5f + ((float)GetRandomValue(0, 10000) / 10000.0f) * 2.0f;

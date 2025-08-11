@@ -18,11 +18,25 @@ uint32_t ContactManager::spawnContact() {
     c.velocityDirRad = rand01() * 2.0f * PI;
     c.speed = 10.0f + rand01() * 20.0f;
     
-    float r = rand01();
-    if (r < 0.25f) c.type = ContactType::EnemySub;
-    else if (r < 0.40f) c.type = ContactType::FriendlySub;
-    else if (r < 0.80f) c.type = ContactType::Fish;
-    else c.type = ContactType::Debris;
+    // Bias spawn toward enemies and ensure there is always at least one enemy
+    bool hasEnemyAlready = false;
+    for (const auto& existing : activeContacts) {
+        if (existing.type == ContactType::EnemySub) {
+            hasEnemyAlready = true;
+            break;
+        }
+    }
+
+    if (!hasEnemyAlready) {
+        c.type = ContactType::EnemySub;
+    } else {
+        // Heavier weight for enemies to increase engagement frequency
+        float r = rand01();
+        if (r < 0.50f) c.type = ContactType::EnemySub;          // 50%
+        else if (r < 0.70f) c.type = ContactType::FriendlySub;  // next 20%
+        else if (r < 0.95f) c.type = ContactType::Fish;         // next 25%
+        else c.type = ContactType::Debris;                      // last 5%
+    }
     
     activeContacts.push_back(c);
     return c.id;
