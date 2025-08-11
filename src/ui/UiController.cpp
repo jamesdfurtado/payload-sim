@@ -53,6 +53,11 @@ void UiController::update(float dt) {
                 } else {
                     loggingSystem->addPhaseMessage("System RESETTING...");
                 }
+                // Reset missile state when system resets
+                missileState.active = false;
+                missileState.explosionTimer = 0.0f;
+                missileState.targetValid = false;
+                missileState.targetIndex = -1;
                 break;
         }
         
@@ -71,6 +76,15 @@ void UiController::update(float dt) {
         if (previousPhase == LaunchPhase::Resetting && safety->getPhase() == LaunchPhase::Idle) {
             loggingSystem->addSystemReset();
         }
+        
+        // Reset missile state when transitioning from Launched to other phases
+        if (previousPhase == LaunchPhase::Launched && safety->getPhase() != LaunchPhase::Launched) {
+            missileState.active = false;
+            missileState.explosionTimer = 0.0f;
+            missileState.targetValid = false;
+            missileState.targetIndex = -1;
+        }
+        
         previousPhase = safety->getPhase();
         
         // Set current payload state

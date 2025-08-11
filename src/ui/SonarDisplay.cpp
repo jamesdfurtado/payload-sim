@@ -4,6 +4,13 @@
 #include "../systems/SafetySystem.h"
 #include <cmath>
 
+// Helper function to calculate distance between two Vector2 points
+static float calculateDistance(const Vector2& a, const Vector2& b) {
+    float dx = a.x - b.x;
+    float dy = a.y - b.y;
+    return sqrtf(dx * dx + dy * dy);
+}
+
 SonarDisplay::SonarDisplay(SimulationEngine& engine, SonarSystem* sonar, SafetySystem* safety)
     : engine(engine), sonar(sonar), safety(safety) {
 }
@@ -11,15 +18,19 @@ SonarDisplay::SonarDisplay(SimulationEngine& engine, SonarSystem* sonar, SafetyS
 void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, const Rectangle& sonarRect) {
     if (!missileState.active) {
         // Check for new missile launch
-        static bool prevLaunched = false;
         bool nowLaunched = (safety && safety->getPhase() == LaunchPhase::Launched);
-        if (nowLaunched && !prevLaunched && sonar && sonar->isTargetAcquired()) {
+        bool hasTarget = (sonar && sonar->isTargetAcquired());
+        
+        // Launch missile if we're in launched phase and have a target
+        if (nowLaunched && hasTarget) {
             missileState.active = true;
             missileState.trail.clear();
             missileState.position = worldToScreen({0,0}, sonarRect); // launch from sub center
             missileState.target = worldToScreen(sonar->getLockedTarget(), sonarRect);
+            missileState.originalTargetWorld = sonar->getLockedTarget(); // Store original target in world coordinates
             missileState.progress = 0.0f;
             missileState.explosionTimer = 0.0f;
+            missileState.targetValid = true; // Target is valid at launch
             
             // Find target index for heat-seeking
             const auto& contacts = sonar->getContacts();
@@ -33,31 +44,67 @@ void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, 
                 }
             }
         }
-        prevLaunched = nowLaunched;
         return;
     }
 
     // Handle explosion phase
     if (missileState.explosionTimer > 0.0f) {
         missileState.explosionTimer -= dt;
-        if (missileState.explosionTimer <= 0.0f && sonar && missileState.targetIndex >= 0) {
-            // Remove enemy and disengage lock
-            sonar->removeContact(missileState.targetIndex);
+        if (missileState.explosionTimer <= 0.0f && sonar) {
+            // Attempt target removal when explosion completes
+            if (missileState.targetValid) {
+                const auto& contacts = sonar->getContacts();
+                bool targetRemoved = false;
+                
+                // First try to remove by stored target index if still valid
+                if (missileState.targetIndex >= 0 && missileState.targetIndex < (int)contacts.size()) {
+                    if (contacts[missileState.targetIndex].type == ContactType::EnemySub &&
+                        calculateDistance(contacts[missileState.targetIndex].position, missileState.originalTargetWorld) < 50.0f) {
+                        // Remove enemy and disengage lock
+                        sonar->removeContact(missileState.targetIndex);
+                        targetRemoved = true;
+                    }
+                }
+                
+                // Fallback: search by position with reasonable blast radius
+                if (!targetRemoved) {
+                    for (int i = 0; i < (int)contacts.size(); ++i) {
+                        if (contacts[i].type == ContactType::EnemySub &&
+                            calculateDistance(contacts[i].position, missileState.originalTargetWorld) < 50.0f) {
+                            sonar->removeContact(i);
+                            targetRemoved = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            // Missile completes
             missileState.active = false;
+            missileState.explosionTimer = 0.0f;
+            missileState.targetValid = false;
+            missileState.targetIndex = -1;
         }
         return;
     }
 
     // Handle missile flight
-    Vector2 targetWorld = {0,0};
+    Vector2 targetWorld = missileState.originalTargetWorld;
+    
+    // Update target validity status for explosion phase
     if (sonar && missileState.targetIndex >= 0) {
         const auto& contacts = sonar->getContacts();
-        if (missileState.targetIndex < (int)contacts.size() && contacts[missileState.targetIndex].type == ContactType::EnemySub) {
-            targetWorld = contacts[missileState.targetIndex].position;
+        if (missileState.targetIndex < (int)contacts.size() && 
+            contacts[missileState.targetIndex].type == ContactType::EnemySub &&
+            calculateDistance(contacts[missileState.targetIndex].position, missileState.originalTargetWorld) < 100.0f) {
+            // Target is still valid
+            missileState.targetValid = true;
         } else {
-            // Target gone, just finish at last known position
-            targetWorld = screenToWorld(missileState.target, sonarRect);
+            // Target is no longer valid (went off map or changed type)
+            missileState.targetValid = false;
         }
+    } else {
+        // No valid target index, target is invalid
+        missileState.targetValid = false;
     }
     
     missileState.target = worldToScreen(targetWorld, sonarRect);
@@ -110,30 +157,30 @@ void SonarDisplay::drawSubmarineIcon(Rectangle r) {
     // Draw main submarine body (rounded rectangle effect using multiple circles)
     int bodyWidth = 24;
     int bodyHeight = 14;
-    int bodyX = (int)subCenter.x - bodyWidth/2;
-    int bodyY = (int)subCenter.y - bodyHeight/2;
+    int bodyX = static_cast<int>(subCenter.x) - static_cast<int>(bodyWidth/2);
+    int bodyY = static_cast<int>(subCenter.y) - static_cast<int>(bodyHeight/2);
     
     // Main body rectangle
     DrawRectangle(bodyX + 2, bodyY, bodyWidth - 4, bodyHeight, DARKGRAY);
     
     // Rounded ends using circles
-    DrawCircle(bodyX + 2, (int)subCenter.y, bodyHeight/2, DARKGRAY);
-    DrawCircle(bodyX + bodyWidth - 2, (int)subCenter.y, bodyHeight/2, DARKGRAY);
+    DrawCircle(bodyX + 2, static_cast<int>(subCenter.y), static_cast<int>(bodyHeight/2), DARKGRAY);
+    DrawCircle(bodyX + bodyWidth - 2, static_cast<int>(subCenter.y), static_cast<int>(bodyHeight/2), DARKGRAY);
     
     // Draw submarine tower (conning tower) on top, positioned towards the left side
     int towerWidth = 6; // Made skinnier (was 8)
     int towerHeight = 6; // Made shorter (was 8)
-    int towerX = bodyX + 4; // Position more towards the left side (was bodyX + bodyWidth/2 - 2)
+    int towerX = bodyX + 4; // Position more towards the left side (was bodyX + static_cast<int>(bodyWidth/2) - 2)
     int towerY = bodyY - towerHeight;
     
     // Tower base
     DrawRectangle(towerX, towerY + 2, towerWidth, towerHeight - 2, GRAY);
     
     // Rounded top of tower
-    DrawCircle(towerX + towerWidth/2, towerY + 2, towerWidth/2, GRAY);
+    DrawCircle(static_cast<int>(towerX + towerWidth/2), towerY + 2, static_cast<int>(towerWidth/2), GRAY);
     
     // Add a small periscope detail on top of the tower
-    DrawCircle(towerX + towerWidth/2, towerY, 2, DARKGRAY);
+    DrawCircle(static_cast<int>(towerX + towerWidth/2), towerY, 2, DARKGRAY);
 }
 
 void SonarDisplay::drawSonarContacts(Rectangle r) {
@@ -148,47 +195,47 @@ void SonarDisplay::drawSonarContacts(Rectangle r) {
             case ContactType::Debris: color = GRAY; break;
         }
         Vector2 sp = worldToScreen(c.position, r);
-        DrawCircle((int)sp.x, (int)sp.y, 4, color);
+        DrawCircle(static_cast<int>(sp.x), static_cast<int>(sp.y), 4, color);
     }
 }
 
 void SonarDisplay::drawTargetLock(Rectangle r) {
     if (engine.getState().targetAcquired && sonar) {
         Vector2 sp = worldToScreen(sonar->getLockedTarget(), r);
-        DrawCircleLines((int)sp.x, (int)sp.y, 12, YELLOW);
-        DrawLine((int)sp.x - 16, (int)sp.y, (int)sp.x + 16, (int)sp.y, YELLOW);
-        DrawLine((int)sp.x, (int)sp.y - 16, (int)sp.x, (int)sp.y + 16, YELLOW);
+        DrawCircleLines(static_cast<int>(sp.x), static_cast<int>(sp.y), 12, YELLOW);
+        DrawLine(static_cast<int>(sp.x) - 16, static_cast<int>(sp.y), static_cast<int>(sp.x) + 16, static_cast<int>(sp.y), YELLOW);
+        DrawLine(static_cast<int>(sp.x), static_cast<int>(sp.y) - 16, static_cast<int>(sp.x), static_cast<int>(sp.y) + 16, YELLOW);
     }
 }
 
 void SonarDisplay::drawMissileTrail(const MissileState& missileState) {
     for (size_t i = 1; i < missileState.trail.size(); ++i) {
-        DrawLine((int)missileState.trail[i-1].x, (int)missileState.trail[i-1].y, 
-                 (int)missileState.trail[i].x, (int)missileState.trail[i].y, 
+        DrawLine(static_cast<int>(missileState.trail[i-1].x), static_cast<int>(missileState.trail[i-1].y), 
+                 static_cast<int>(missileState.trail[i].x), static_cast<int>(missileState.trail[i].y), 
                  Fade(GRAY, 0.5f));
     }
 }
 
 void SonarDisplay::drawMissile(const MissileState& missileState) {
-    DrawCircle((int)missileState.position.x, (int)missileState.position.y, 6, ORANGE);
+    DrawCircle(static_cast<int>(missileState.position.x), static_cast<int>(missileState.position.y), 6, ORANGE);
 }
 
 void SonarDisplay::drawExplosion(const MissileState& missileState) {
     float t = 1.0f - missileState.explosionTimer / EXPLOSION_DURATION;
-    DrawCircle((int)missileState.position.x, (int)missileState.position.y, 24 * t, YELLOW);
-    DrawCircle((int)missileState.position.x, (int)missileState.position.y, 12 * t, RED);
+    DrawCircle(static_cast<int>(missileState.position.x), static_cast<int>(missileState.position.y), static_cast<int>(24 * t), YELLOW);
+    DrawCircle(static_cast<int>(missileState.position.x), static_cast<int>(missileState.position.y), static_cast<int>(12 * t), RED);
 }
 
 void SonarDisplay::drawSonarGrid(Rectangle r) {
     Color gridColor = Fade(SKYBLUE, 0.15f);
     Vector2 center = {r.x + r.width/2.0f, r.y + r.height/2.0f};
-    int maxRadius = (int)std::min(r.width, r.height) / 2;
+    int maxRadius = static_cast<int>(static_cast<float>(std::min(r.width, r.height)) / 2.0f);
 
     // Enable scissor test to clip circles to sonar boundaries
-    BeginScissorMode((int)r.x, (int)r.y, (int)r.width, (int)r.height);
+    BeginScissorMode(static_cast<int>(r.x), static_cast<int>(r.y), static_cast<int>(r.width), static_cast<int>(r.height));
     
     for (int radius = 50; radius <= maxRadius + 100; radius += 50) {
-        DrawCircleLines((int)center.x, (int)center.y, radius, gridColor);
+        DrawCircleLines(static_cast<int>(center.x), static_cast<int>(center.y), radius, gridColor);
     }
     
     EndScissorMode();
@@ -200,20 +247,20 @@ void SonarDisplay::drawCrossHair(Rectangle r) {
     Vector2 center = {r.x + r.width/2.0f, r.y + r.height/2.0f};
     
     // Vertical line
-    DrawLine((int)center.x, (int)r.y, (int)center.x, (int)(r.y + r.height), gridColor);
+    DrawLine(static_cast<int>(center.x), static_cast<int>(r.y), static_cast<int>(center.x), static_cast<int>(r.y + r.height), gridColor);
     
     // Horizontal line
-    DrawLine((int)r.x, (int)center.y, (int)(r.x + r.width), (int)center.y, gridColor);
+    DrawLine(static_cast<int>(r.x), static_cast<int>(center.y), static_cast<int>(r.x + r.width), static_cast<int>(center.y), gridColor);
     
     // Diagonal lines (45-degree bearings)
-    DrawLine((int)r.x, (int)r.y, (int)(r.x + r.width), (int)(r.y + r.height), gridColor);
-    DrawLine((int)(r.x + r.width), (int)r.y, (int)r.x, (int)(r.y + r.height), gridColor);
+    DrawLine(static_cast<int>(r.x), static_cast<int>(r.y), static_cast<int>(r.x + r.width), static_cast<int>(r.y + r.height), gridColor);
+    DrawLine(static_cast<int>(r.x + r.width), static_cast<int>(r.y), static_cast<int>(r.x), static_cast<int>(r.y + r.height), gridColor);
 }
 
 void SonarDisplay::drawMouseReticle(Rectangle r) {
     Vector2 m = GetMousePosition();
     if (CheckCollisionPointRec(m, r)) {
-        DrawCircleLines((int)m.x, (int)m.y, 10, Fade(YELLOW, 0.5f));
+        DrawCircleLines(static_cast<int>(m.x), static_cast<int>(m.y), 10, Fade(YELLOW, 0.5f));
     }
 }
 

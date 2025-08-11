@@ -16,13 +16,16 @@ public:
         Vector2 position{0,0};
         Vector2 velocity{0,0};
         Vector2 target{0,0};
+        Vector2 originalTargetWorld{0,0};  // Store original target in world coordinates
         std::vector<Vector2> trail;
         float progress = 0.0f;
         float explosionTimer = 0.0f;
         int targetIndex = -1;
+        bool targetValid = true;  // Track if target is still valid during flight
     };
 
     void updateMissileAnimation(float dt, MissileState& missileState, const Rectangle& sonarRect);
+    // Note: Once launched, missiles maintain their original trajectory and do not redirect to new targets
     void drawSonar(Rectangle r, const MissileState& missileState);
     void drawMissileTrail(const MissileState& missileState);
     void drawMouseReticle(Rectangle r);

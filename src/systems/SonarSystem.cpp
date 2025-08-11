@@ -1,6 +1,12 @@
 #include "SonarSystem.h"
 #include <cmath>
-#include <raymath.h>
+
+// Helper function to calculate distance between two Vector2 points
+static float calculateDistance(const Vector2& a, const Vector2& b) {
+    float dx = a.x - b.x;
+    float dy = a.y - b.y;
+    return sqrtf(dx * dx + dy * dy);
+}
 
 static float rand01() {
     return (float) GetRandomValue(0, 10000) / 10000.0f;
@@ -75,13 +81,13 @@ void SonarSystem::update(SimulationState& state, float dt) {
         bool friendlyInside = false;
         for (auto& c : contacts) {
             if (c.type == ContactType::FriendlySub) {
-                if (Vector2Distance(c.position, lockedTarget) < blastRadius) {
+                if (calculateDistance(c.position, lockedTarget) < blastRadius) {
                     friendlyInside = true;
                     break;
                 }
             }
         }
-        if (Vector2Distance({0,0}, lockedTarget) < blastRadius) {
+        if (calculateDistance({0,0}, lockedTarget) < blastRadius) {
             friendlyInside = true;
         }
         state.noFriendlyUnitsInBlastRadius = !friendlyInside;
@@ -93,7 +99,7 @@ void SonarSystem::attemptManualLock(const Vector2& cursorWorldPos) {
     float nearest = 99999.0f;
     int bestIdx = -1;
     for (int i = 0; i < (int)contacts.size(); ++i) {
-        float d = Vector2Distance(contacts[i].position, cursorWorldPos);
+        float d = calculateDistance(contacts[i].position, cursorWorldPos);
         if (d < nearest) { nearest = d; bestIdx = i; }
     }
     if (bestIdx >= 0 && nearest < 25.0f) {
