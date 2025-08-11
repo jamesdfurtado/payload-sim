@@ -12,7 +12,7 @@ static float calculateDistance(const Vector2& a, const Vector2& b) {
 }
 
 // Constants for missile display
-static constexpr float EXPLOSION_DURATION = 0.6f;
+static constexpr float EXPLOSION_DURATION = 0.4f;  // Updated to match backend
 
 SonarDisplay::SonarDisplay(SimulationEngine& engine, SonarSystem* sonar, SafetySystem* safety)
     : engine(engine), sonar(sonar), safety(safety) {
@@ -159,9 +159,7 @@ void SonarDisplay::drawTargetLock(Rectangle r) {
 void SonarDisplay::drawMissileTrail(const MissileState& missileState) {
     // Draw trail lines between positions
     for (size_t i = 1; i < missileState.trail.size(); ++i) {
-        DrawLine(static_cast<int>(missileState.trail[i-1].x), static_cast<int>(missileState.trail[i-1].y), 
-                 static_cast<int>(missileState.trail[i].x), static_cast<int>(missileState.trail[i].y), 
-                 Fade(GRAY, 0.5f));
+        DrawLineEx(missileState.trail[i-1], missileState.trail[i], 2.0f, Fade(GRAY, 0.5f));
     }
     
     // If there's only one position in trail, draw a small dot to show the trail start

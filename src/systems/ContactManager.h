@@ -68,8 +68,8 @@ private:
     MissileState missileState;
     
     // Missile constants
-    static constexpr float MISSILE_SPEED = 100.0f;  // Reduced from 200.0f for better visibility
-    static constexpr float EXPLOSION_DURATION = 0.6f;
+    static constexpr float MISSILE_SPEED = 300.0f;  // Increased from 100.0f for 3x faster movement
+    static constexpr float EXPLOSION_DURATION = 0.4f;  // Reduced from 0.6f for quicker explosion
     static constexpr float MISSILE_COLLISION_DISTANCE = 16.0f;
     
     // Helper methods
