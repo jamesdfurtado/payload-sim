@@ -104,13 +104,34 @@ void SonarDisplay::drawSonar(Rectangle r, const MissileState& missileState) {
 
 void SonarDisplay::drawSubmarineIcon(Rectangle r) {
     Vector2 subCenter = worldToScreen({0,0}, r);
-    DrawRectangle((int)subCenter.x - 10, (int)subCenter.y - 6, 20, 12, DARKGRAY);
-    DrawTriangle(
-        Vector2{subCenter.x + 10.0f, subCenter.y},
-        Vector2{subCenter.x + 18.0f, subCenter.y - 8.0f},
-        Vector2{subCenter.x + 18.0f, subCenter.y + 8.0f},
-        GRAY);
-    DrawCircle((int)subCenter.x - 8, (int)subCenter.y, 4, SKYBLUE);
+    
+    // Draw main submarine body (rounded rectangle effect using multiple circles)
+    int bodyWidth = 24;
+    int bodyHeight = 14;
+    int bodyX = (int)subCenter.x - bodyWidth/2;
+    int bodyY = (int)subCenter.y - bodyHeight/2;
+    
+    // Main body rectangle
+    DrawRectangle(bodyX + 2, bodyY, bodyWidth - 4, bodyHeight, DARKGRAY);
+    
+    // Rounded ends using circles
+    DrawCircle(bodyX + 2, (int)subCenter.y, bodyHeight/2, DARKGRAY);
+    DrawCircle(bodyX + bodyWidth - 2, (int)subCenter.y, bodyHeight/2, DARKGRAY);
+    
+    // Draw submarine tower (conning tower) on top, positioned towards the left side
+    int towerWidth = 6; // Made skinnier (was 8)
+    int towerHeight = 6; // Made shorter (was 8)
+    int towerX = bodyX + 4; // Position more towards the left side (was bodyX + bodyWidth/2 - 2)
+    int towerY = bodyY - towerHeight;
+    
+    // Tower base
+    DrawRectangle(towerX, towerY + 2, towerWidth, towerHeight - 2, GRAY);
+    
+    // Rounded top of tower
+    DrawCircle(towerX + towerWidth/2, towerY + 2, towerWidth/2, GRAY);
+    
+    // Add a small periscope detail on top of the tower
+    DrawCircle(towerX + towerWidth/2, towerY, 2, DARKGRAY);
 }
 
 void SonarDisplay::drawSonarContacts(Rectangle r) {
