@@ -61,6 +61,18 @@ void UiController::update(float dt) {
             loggingSystem->addAuthSuccess();
         }
         
+        // Check for payload armed
+        if (safety->getPhase() == LaunchPhase::Armed) {
+            loggingSystem->addPayloadArmed();
+        }
+        
+        // Check for system reset - only when transitioning from Resetting to Idle
+        static LaunchPhase previousPhase = LaunchPhase::Idle;
+        if (previousPhase == LaunchPhase::Resetting && safety->getPhase() == LaunchPhase::Idle) {
+            loggingSystem->addSystemReset();
+        }
+        previousPhase = safety->getPhase();
+        
         // Set current payload state
         const char* phaseStr = "";
         switch (safety->getPhase()) {

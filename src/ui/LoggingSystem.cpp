@@ -32,6 +32,14 @@ void LoggingSystem::addAuthSuccess() {
     addMessage("Authorization granted, please ARM the payload.", GREEN, true);
 }
 
+void LoggingSystem::addPayloadArmed() {
+    addMessage("Payload armed.", GREEN, false);
+}
+
+void LoggingSystem::addSystemReset() {
+    addMessage("System reset.", ORANGE, false);
+}
+
 void LoggingSystem::setPayloadState(const std::string& state) {
     currentPayloadState = state;
 }
@@ -81,35 +89,23 @@ void LoggingSystem::update(float dt) {
 }
 
 void LoggingSystem::drawMessages(Rectangle area) {
-    // Draw payload state at the top
+    // Draw payload state at the top right of the brown box (moved 80 pixels left total)
     if (!currentPayloadState.empty()) {
         DrawText(TextFormat("Payload State: %s", currentPayloadState.c_str()), 
-                (int)area.x + 20, (int)area.y + 170, 20, YELLOW);
+                (int)(area.x + area.width - 280), (int)area.y + 15, 20, YELLOW);
     }
     
     if (messages.empty()) return;
     
-    // Position messages between Payload State and auth code UI
-    // Payload State is at y+170, auth code starts at y+180, so we'll use y+175
-    int startY = (int)area.y + 175;
-    int lineHeight = 14; // Smaller text size
+    // Only show the most recent message to prevent multiple messages appearing
+    const LogMessage& msg = messages.back();
+    int y = (int)area.y + 110; // Moved down 20 pixels from 90 to 110
     
-    // Draw background for messages
-    Rectangle msgArea = { area.x + 10, (float)startY, area.width - 20, (float)(lineHeight * MAX_MESSAGES + 4) };
-    DrawRectangleRec(msgArea, Fade(BLACK, 0.3f));
-    DrawRectangleLinesEx(msgArea, 1, Fade(GRAY, 0.5f));
-    
-    // Draw messages
-    for (size_t i = 0; i < messages.size() && i < MAX_MESSAGES; ++i) {
-        const LogMessage& msg = messages[i];
-        int y = startY + 2 + (int)i * lineHeight;
-        
-        // Truncate long messages to fit in the area
-        std::string displayMsg = msg.message;
-        if (displayMsg.length() > 80) { // Limit to 80 characters
-            displayMsg = displayMsg.substr(0, 77) + "...";
-        }
-        
-        DrawText(displayMsg.c_str(), (int)msgArea.x + 5, y, 12, msg.color);
+    // Truncate long messages to fit in the area
+    std::string displayMsg = msg.message;
+    if (displayMsg.length() > 80) { // Limit to 80 characters
+        displayMsg = displayMsg.substr(0, 77) + "...";
     }
+    
+    DrawText(displayMsg.c_str(), (int)area.x + 20, y, 14, LIGHTGRAY);
 }

@@ -27,6 +27,12 @@ public:
     // Add authorization success message
     void addAuthSuccess();
     
+    // Add payload armed message
+    void addPayloadArmed();
+    
+    // Add system reset message
+    void addSystemReset();
+    
     // Set current payload state
     void setPayloadState(const std::string& state);
     
