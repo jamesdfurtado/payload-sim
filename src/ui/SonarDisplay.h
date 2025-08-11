@@ -39,6 +39,7 @@ private:
     static constexpr float EXPLOSION_DURATION = 0.6f;
 
     void drawSubmarineIcon(Rectangle r);
+    void drawSonarGrid(Rectangle r);
     void drawSonarContacts(Rectangle r);
     void drawTargetLock(Rectangle r);
     void drawMissile(const MissileState& missileState);

@@ -87,6 +87,7 @@ void SonarDisplay::drawSonar(Rectangle r, const MissileState& missileState) {
     DrawRectangleLinesEx(r, 1, SKYBLUE);
     DrawText("Sonar", (int)r.x + 10, (int)r.y + 8, 20, SKYBLUE);
 
+    drawSonarGrid(r);
     drawSubmarineIcon(r);
     drawSonarContacts(r);
     drawTargetLock(r);
@@ -175,6 +176,31 @@ void SonarDisplay::drawExplosion(const MissileState& missileState) {
     float t = 1.0f - missileState.explosionTimer / EXPLOSION_DURATION;
     DrawCircle((int)missileState.position.x, (int)missileState.position.y, 24 * t, YELLOW);
     DrawCircle((int)missileState.position.x, (int)missileState.position.y, 12 * t, RED);
+}
+
+void SonarDisplay::drawSonarGrid(Rectangle r) {
+    // Draw subtle grid lines for sonar display
+    Color gridColor = Fade(SKYBLUE, 0.15f); // Very subtle blue grid
+    
+    // Draw concentric circles (range rings) every 100 pixels
+    int maxRadius = (int)std::min(r.width, r.height) / 2;
+    for (int radius = 50; radius < maxRadius; radius += 50) {
+        Vector2 center = {r.x + r.width/2, r.y + r.height/2};
+        DrawCircleLines((int)center.x, (int)center.y, radius, gridColor);
+    }
+    
+    // Draw cross-hair lines (bearing lines)
+    Vector2 center = {r.x + r.width/2, r.y + r.height/2};
+    
+    // Vertical line
+    DrawLine((int)center.x, (int)r.y, (int)center.x, (int)(r.y + r.height), gridColor);
+    
+    // Horizontal line
+    DrawLine((int)r.x, (int)center.y, (int)(r.x + r.width), (int)center.y, gridColor);
+    
+    // Diagonal lines (45-degree bearings)
+    DrawLine((int)r.x, (int)r.y, (int)(r.x + r.width), (int)(r.y + r.height), gridColor);
+    DrawLine((int)(r.x + r.width), (int)r.y, (int)r.x, (int)(r.y + r.height), gridColor);
 }
 
 void SonarDisplay::drawMouseReticle(Rectangle r) {
