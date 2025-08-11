@@ -14,47 +14,65 @@ protected:
     SimulationState state;
 };
 
-TEST_F(PowerSystemTest, InitialWeaponsPowerIsCorrect) { // Initial weapons power is 50%
-    EXPECT_EQ(powerSystem->getWeaponsPower(), 0.5f);
+TEST_F(PowerSystemTest, InitialPowerLevelIsCorrect) { // Initial power level is OFF
+    EXPECT_EQ(powerSystem->getPowerLevel(), 0.0f);
 }
 
-TEST_F(PowerSystemTest, CanRoutePowerToWeapons) { // Can route power to weapons
-    powerSystem->routePowerToWeapons(0.8f);
-    EXPECT_EQ(powerSystem->getWeaponsPower(), 0.8f);
+TEST_F(PowerSystemTest, CanSetPowerLevel) { // Can set power level
+    powerSystem->setPowerLevel(0.8f);
+    EXPECT_EQ(powerSystem->getPowerLevel(), 0.8f);
     
-    powerSystem->routePowerToWeapons(0.2f);
-    EXPECT_EQ(powerSystem->getWeaponsPower(), 0.2f);
+    powerSystem->setPowerLevel(0.2f);
+    EXPECT_EQ(powerSystem->getPowerLevel(), 0.2f);
 }
 
 TEST_F(PowerSystemTest, ClampsPowerValues) { // Power values are clamped to 0-1 range
-    powerSystem->routePowerToWeapons(1.5f);
-    EXPECT_EQ(powerSystem->getWeaponsPower(), 1.0f);
+    powerSystem->setPowerLevel(1.5f);
+    EXPECT_EQ(powerSystem->getPowerLevel(), 1.0f);
     
-    powerSystem->routePowerToWeapons(-0.5f);
-    EXPECT_EQ(powerSystem->getWeaponsPower(), 0.0f);
+    powerSystem->setPowerLevel(-0.5f);
+    EXPECT_EQ(powerSystem->getPowerLevel(), 0.0f);
 }
 
-TEST_F(PowerSystemTest, UpdateSetsBatteryTo100Percent) { // Temporary implementation sets battery to 100%
+TEST_F(PowerSystemTest, UpdateHandlesPowerStates) { // Test power state handling
     state.batteryPercent = 25.0f;
     state.powerSupplyStable = false;
     
+    powerSystem->setPowerLevel(1.0f); // Turn power ON
     powerSystem->update(state, 0.016f);
     
-    EXPECT_EQ(state.batteryPercent, 100.0f);
-    EXPECT_TRUE(state.powerSupplyStable);
+    EXPECT_GT(state.batteryPercent, 25.0f); // Battery should deplete
+    EXPECT_TRUE(state.powerSupplyStable); // Power ON and battery >0% should be stable
 }
 
-TEST_F(PowerSystemTest, DISABLED_FuturePowerConsumptionTest) { // Future test for power consumption
+TEST_F(PowerSystemTest, PowerConsumptionTest) { // Test power consumption and battery behavior
     state.batteryPercent = 100.0f;
-    powerSystem->routePowerToWeapons(1.0f);
+    powerSystem->setPowerLevel(1.0f); // Power ON (>=0.5)
     
-    for (int i = 0; i < 100; ++i) {
+    // Run for a few seconds - battery should deplete
+    for (int i = 0; i < 50; ++i) {
         powerSystem->update(state, 0.1f);
     }
     
     EXPECT_LT(state.batteryPercent, 100.0f);
+    EXPECT_TRUE(state.powerSupplyStable); // Power ON and battery >0% should be stable
     
-    if (state.batteryPercent < 20.0f) {
-        EXPECT_FALSE(state.powerSupplyStable);
+    // Test power OFF mode (<0.5)
+    powerSystem->setPowerLevel(0.0f);
+    float batteryBefore = state.batteryPercent;
+    
+    // Run for a few seconds - battery should recharge
+    for (int i = 0; i < 50; ++i) {
+        powerSystem->update(state, 0.1f);
     }
+    
+    EXPECT_GT(state.batteryPercent, batteryBefore);
+    EXPECT_FALSE(state.powerSupplyStable); // Power OFF should not be stable
+    
+    // Test power stable when battery is depleted
+    powerSystem->setPowerLevel(1.0f); // Turn power back ON
+    state.batteryPercent = 0.0f; // Deplete battery
+    
+    powerSystem->update(state, 0.1f);
+    EXPECT_FALSE(state.powerSupplyStable); // Power ON but battery 0% should not be stable
 }

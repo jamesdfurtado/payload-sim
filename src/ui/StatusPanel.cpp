@@ -41,37 +41,45 @@ void StatusPanel::drawStatusLights(Rectangle r) {
     }
 }
 
-void StatusPanel::drawPower(Rectangle r, float& uiWeaponsPower) {
+void StatusPanel::drawPower(Rectangle r, float& uiPowerLevel) {
     auto& s = engine.getState();
     DrawRectangleRec(r, Fade(DARKBLUE, 0.3f));
     DrawText("Power", (int)r.x + 10, (int)r.y + 8, 20, SKYBLUE);
-    DrawText(TextFormat("Battery: %.1f%%", s.batteryPercent), (int)r.x + 10, (int)r.y + 40, 18, RAYWHITE);
-    DrawText(TextFormat("Weapons Power: %.0f%%", uiWeaponsPower * 100.0f), (int)r.x + 10, (int)r.y + 64, 18, RAYWHITE);
     
-    // Interactive power slider
-    Rectangle sliderRect = { r.x + 200, r.y + 60, 200, 20 };
-    DrawRectangleRec(sliderRect, Fade(DARKGRAY, 0.8f));
-    DrawRectangleLinesEx(sliderRect, 2, GRAY);
+    DrawText(TextFormat("Battery: %.0f%%", s.batteryPercent), (int)r.x + 10, (int)r.y + 40, 18, RAYWHITE);
+    DrawText("Weapons Power", (int)r.x + 10, (int)r.y + 64, 18, RAYWHITE);
     
-    // Draw power level indicator
-    float powerBarWidth = sliderRect.width * uiWeaponsPower;
-    Rectangle powerBar = { sliderRect.x, sliderRect.y, powerBarWidth, sliderRect.height };
-    DrawRectangleRec(powerBar, SKYBLUE);
+    // Interactive iOS-style slider
+    Rectangle sliderRect = { r.x + 200, r.y + 60, 120, 40 };
+    bool powerOn = (uiPowerLevel > 0.5f);
     
-    // Draw slider handle
-    float handleX = sliderRect.x + sliderRect.width * uiWeaponsPower;
-    DrawCircle((int)handleX, (int)(sliderRect.y + sliderRect.height / 2), 12, RAYWHITE);
-    DrawCircleLines((int)handleX, (int)(sliderRect.y + sliderRect.height / 2), 12, BLACK);
+    // Draw slider background (grey when OFF, green when ON)
+    Color sliderColor = powerOn ? GREEN : DARKGRAY;
+    DrawRectangleRec(sliderRect, sliderColor);
+    DrawRectangleLinesEx(sliderRect, 2, powerOn ? RAYWHITE : GRAY);
+    
+    // Draw slider handle (slides left/right)
+    float handleX = powerOn ? (sliderRect.x + sliderRect.width - 20) : (sliderRect.x + 2);
+    Rectangle handleRect = { handleX, sliderRect.y + 2, 16, sliderRect.height - 4 };
+    DrawRectangleRec(handleRect, RAYWHITE);
+    DrawRectangleLinesEx(handleRect, 1, BLACK);
+    
+    // Draw ON/OFF text
+    const char* buttonText = powerOn ? "ON" : "OFF";
+    int textWidth = MeasureText(buttonText, 16);
+    int textX = (int)(sliderRect.x + (sliderRect.width - textWidth) / 2);
+    int textY = (int)(sliderRect.y + (sliderRect.height - 16) / 2);
+    DrawText(buttonText, textX, textY, 16, powerOn ? RAYWHITE : LIGHTGRAY);
     
     // Handle mouse interaction
     Vector2 mousePos = GetMousePosition();
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mousePos, sliderRect)) {
-        float relativeX = (mousePos.x - sliderRect.x) / sliderRect.width;
-        uiWeaponsPower = std::max(0.0f, std::min(1.0f, relativeX));
-        if (power) power->routePowerToWeapons(uiWeaponsPower);
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mousePos, sliderRect)) {
+        // Toggle power state
+        uiPowerLevel = powerOn ? 0.0f : 1.0f;
+        if (power) power->setPowerLevel(uiPowerLevel);
     }
     
-    DrawText("Drag to adjust", (int)sliderRect.x, (int)(sliderRect.y + sliderRect.height + 5), 14, LIGHTGRAY);
+    DrawText("Click to toggle", (int)sliderRect.x, (int)(sliderRect.y + sliderRect.height + 5), 14, LIGHTGRAY);
 }
 
 void StatusPanel::drawDepth(Rectangle r) {

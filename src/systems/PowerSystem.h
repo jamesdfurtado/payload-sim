@@ -9,12 +9,12 @@ public:
     void update(SimulationState& state, float dt) override;
 
     // Player interactions
-    void routePowerToWeapons(float amount01);
-    float getWeaponsPower() const { return weaponsPower01; }
+    void setPowerLevel(float amount01);
+    float getPowerLevel() const { return weaponsPower01; }
 
 private:
     float baseDrainPerSec = 0.5f;
-    float weaponsPower01 = 0.5f; // 0..1 allocation to weapons/launch
+    float weaponsPower01 = 0.0f; // 0..1 allocation to weapons/launch (starts OFF)
 };
 
 

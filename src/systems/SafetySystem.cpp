@@ -130,6 +130,11 @@ void SafetySystem::update(SimulationState& state, float dt) {
         if (resetTimer <= 0.0f) {
             phase = LaunchPhase::Idle;
             resetReason.clear();
+            
+            // Turn off power when reset completes
+            if (powerOffCallback) {
+                powerOffCallback();
+            }
         }
         break; }
     }

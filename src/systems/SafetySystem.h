@@ -2,6 +2,7 @@
 
 #include "../simulation/SimulationEngine.h"
 #include <string>
+#include <functional>
 
 enum class LaunchPhase { Idle, Authorized, Arming, Armed, Launching, Launched, Resetting };
 
@@ -24,6 +25,9 @@ public:
 
     // UI sets the current challenge code here
     void setChallengeCode(const std::string& code) { currentChallengeCode = code; }
+    
+    // Set callback for when reset completes (to turn off power)
+    void setPowerOffCallback(std::function<void()> callback) { powerOffCallback = callback; }
 
 private:
     // Current state
@@ -41,6 +45,9 @@ private:
     float resetTimer = 0.0f;
 
     std::string currentChallengeCode;
+    
+    // Callback to turn off power when reset completes
+    std::function<void()> powerOffCallback;
 
     // Conditional checks to move to next state
     bool conditionsForAuthMet(const SimulationState& s) const;

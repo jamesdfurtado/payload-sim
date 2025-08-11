@@ -53,7 +53,7 @@ private:
     MissileState missileState;  // Now using MissileState from ContactManager
     InteractiveControls::UIState uiState;
     AuthCode::AuthState authState;
-    float uiWeaponsPower = 0.5f; // Weapons power state
+    float uiPowerLevel = 0.0f; // Power level state (starts OFF)
 };
 
 

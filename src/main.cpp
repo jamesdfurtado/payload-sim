@@ -36,6 +36,7 @@ int main() {
 
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime();
+        
         engine.update(dt);
 
         ui.update(dt);

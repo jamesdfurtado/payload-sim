@@ -19,50 +19,46 @@ protected:
 };
 
 TEST_F(PowerUIIntegrationTest, PowerSliderInitialState) {
-    float weaponsPower = 0.5f; // Default middle position
+    float weaponsPower = 0.0f; // Default OFF position
     Rectangle powerRect = {640, 140, 620, 110};
     
     // Should be able to draw without errors
     EXPECT_NO_THROW(statusPanel->drawPower(powerRect, weaponsPower));
     
     // Power should remain at initial value when no mouse interaction
-    EXPECT_EQ(weaponsPower, 0.5f);
+    EXPECT_EQ(weaponsPower, 0.0f);
 }
 
 TEST_F(PowerUIIntegrationTest, PowerSliderBoundaryValues) {
     Rectangle powerRect = {640, 140, 620, 110};
     
-    // Test minimum value
-    float minPower = 0.0f;
-    EXPECT_NO_THROW(statusPanel->drawPower(powerRect, minPower));
-    EXPECT_GE(minPower, 0.0f);
+    // Test OFF state (0.0f)
+    float offPower = 0.0f;
+    EXPECT_NO_THROW(statusPanel->drawPower(powerRect, offPower));
+    EXPECT_EQ(offPower, 0.0f);
     
-    // Test maximum value
-    float maxPower = 1.0f;
-    EXPECT_NO_THROW(statusPanel->drawPower(powerRect, maxPower));
-    EXPECT_LE(maxPower, 1.0f);
+    // Test ON state (1.0f)
+    float onPower = 1.0f;
+    EXPECT_NO_THROW(statusPanel->drawPower(powerRect, onPower));
+    EXPECT_EQ(onPower, 1.0f);
     
-    // Test out-of-bounds values (should be clamped internally)
-    float belowMin = -0.5f;
-    EXPECT_NO_THROW(statusPanel->drawPower(powerRect, belowMin));
-    
-    float aboveMax = 1.5f;
-    EXPECT_NO_THROW(statusPanel->drawPower(powerRect, aboveMax));
+    // Test middle value (should toggle to ON when clicked)
+    float middlePower = 0.5f;
+    EXPECT_NO_THROW(statusPanel->drawPower(powerRect, middlePower));
 }
 
 TEST_F(PowerUIIntegrationTest, PowerSliderValuePreservation) {
     Rectangle powerRect = {640, 140, 620, 110};
     
-    // Test various power levels
-    float testValues[] = {0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
+    // Test ON/OFF states
+    float testValues[] = {0.0f, 1.0f};
     
     for (float testValue : testValues) {
         float powerValue = testValue;
         EXPECT_NO_THROW(statusPanel->drawPower(powerRect, powerValue));
         
-        // Value should remain within valid range
-        EXPECT_GE(powerValue, 0.0f);
-        EXPECT_LE(powerValue, 1.0f);
+        // Value should remain as ON (1.0f) or OFF (0.0f)
+        EXPECT_TRUE(powerValue == 0.0f || powerValue == 1.0f);
     }
 }
 
@@ -70,11 +66,11 @@ TEST_F(PowerUIIntegrationTest, PowerSystemIntegration) {
     Rectangle powerRect = {640, 140, 620, 110};
     float weaponsPower = 0.75f;
     
-    // Draw power panel (this may call power->routePowerToWeapons internally)
+    // Draw power panel (this may call power->setPowerLevel internally)
     EXPECT_NO_THROW(statusPanel->drawPower(powerRect, weaponsPower));
     
-    // Verify the power system can handle the power routing
-    EXPECT_NO_THROW(powerSystem->routePowerToWeapons(weaponsPower));
+    // Verify the power system can handle the power setting
+    EXPECT_NO_THROW(powerSystem->setPowerLevel(weaponsPower));
     
     // Update the power system to ensure it processes the power allocation
     auto& state = engine->getState();
@@ -90,7 +86,7 @@ TEST_F(PowerUIIntegrationTest, PowerSliderUIRectangleHandling) {
         {-10, -10, 50, 50}    // Rectangle with negative coordinates
     };
     
-    float weaponsPower = 0.5f;
+    float weaponsPower = 0.0f;
     
     for (const auto& rect : rects) {
         EXPECT_NO_THROW(statusPanel->drawPower(rect, weaponsPower));
@@ -143,10 +139,10 @@ TEST_F(PowerUISystemTest, PowerFlowFromUIToSystem) {
     Rectangle powerRect = {640, 140, 620, 110};
     float weaponsPower = 0.8f;
     
-    // Simulate drawing the power UI (which should route power)
+    // Simulate drawing the power UI (which should set power level)
     statusPanel->drawPower(powerRect, weaponsPower);
     
-    // Update the power system to process the power routing
+    // Update the power system to process the power setting
     auto& state = engine->getState();
     powerSystem->update(state, 0.016f);
     
@@ -157,7 +153,7 @@ TEST_F(PowerUISystemTest, PowerFlowFromUIToSystem) {
 
 TEST_F(PowerUISystemTest, PowerUIRespondsToSystemState) {
     Rectangle powerRect = {640, 140, 620, 110};
-    float weaponsPower = 0.5f;
+    float weaponsPower = 0.0f;
     
     // Test with various system states
     auto& state = engine->getState();

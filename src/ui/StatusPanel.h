@@ -10,7 +10,7 @@ public:
     StatusPanel(SimulationEngine& engine, PowerSystem* power);
 
     void drawStatusLights(Rectangle r);
-    void drawPower(Rectangle r, float& uiWeaponsPower); // Changed to reference for interactive control
+    void drawPower(Rectangle r, float& uiPowerLevel); // Changed to reference for interactive control
     void drawDepth(Rectangle r);
 
 private:

@@ -1,5 +1,6 @@
 #include "UiController.h"
 #include "../systems/SafetySystem.h"
+#include "../systems/PowerSystem.h"
 
 UiController::UiController(SimulationEngine& engine,
                            SonarSystem* sonar,
@@ -16,6 +17,16 @@ UiController::UiController(SimulationEngine& engine,
     sonarDisplay = std::make_unique<SonarDisplay>(engine, sonar, safety);
     interactiveControls = std::make_unique<InteractiveControls>(engine, safety, depth);
     loggingSystem = std::make_unique<LoggingSystem>();
+    
+    // Set up power off callback for when reset completes
+    if (safety) {
+        safety->setPowerOffCallback([this, power]() {
+            if (power) {
+                power->setPowerLevel(0.0f); // Turn power OFF
+                uiPowerLevel = 0.0f; // Update UI power level
+            }
+        });
+    }
 }
 
 void UiController::update(float dt) {
@@ -101,7 +112,7 @@ void UiController::render() {
 
     // Delegate rendering to UI components
     statusPanel->drawStatusLights(status);
-    statusPanel->drawPower(powerR, uiWeaponsPower);
+    statusPanel->drawPower(powerR, uiPowerLevel);
     statusPanel->drawDepth(depthR);
     interactiveControls->drawDepthControlInPanel(depthR, uiState);
     interactiveControls->drawInteractiveControls(controls, uiState, authState);
