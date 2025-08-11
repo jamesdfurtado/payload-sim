@@ -50,14 +50,8 @@ void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, 
     if (contactManager) {
         const auto& contactManagerState = contactManager->getMissileState();
         
-        // Only update if the missile state has actually changed
-        if (contactManagerState.active != missileState.active || 
-            contactManagerState.explosionTimer != missileState.explosionTimer ||
-            contactManagerState.targetId != missileState.targetId) {
-            
-            // Copy the entire missile state to ensure proper synchronization
-            missileState = contactManagerState;
-        }
+        // Always update the missile state to ensure smooth animation
+        missileState = contactManagerState;
         
         // Special case: if explosion timer is finished but missile still shows as active,
         // ensure we sync with the backend state to prevent UI desync

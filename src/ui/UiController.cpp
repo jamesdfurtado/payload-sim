@@ -38,6 +38,11 @@ void UiController::update(float dt) {
     Rectangle sonarRect{ 20, 120, 600, 580 };
     inputHandler->handleSonarClick(sonarRect);
     
+    // Get current missile state from ContactManager before updating animation
+    if (contactManager) {
+        missileState = contactManager->getMissileState();
+    }
+    
     // Update missile animation - now handled by ContactManager
     sonarDisplay->updateMissileAnimation(dt, missileState, sonarRect);
     
