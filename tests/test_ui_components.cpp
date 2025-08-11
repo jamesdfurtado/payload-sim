@@ -21,21 +21,21 @@ protected:
         engine = std::make_unique<SimulationEngine>();
         powerSystem = std::make_unique<PowerSystem>();
         safetySystem = std::make_unique<SafetySystem>();
-        sonarSystem = std::make_unique<SonarSystem>();
+        contactManager = std::make_unique<ContactManager>();  // Create ContactManager first
+        sonarSystem = std::make_unique<SonarSystem>(*contactManager);
         depthControl = std::make_unique<DepthControl>();
         targetingSystem = std::make_unique<TargetingSystem>();
         environmentSystem = std::make_unique<EnvironmentSystem>();
         
-        inputHandler = std::make_unique<InputHandler>(*engine, sonarSystem.get(), 
-                                                     powerSystem.get(), depthControl.get(),
-                                                     targetingSystem.get(), safetySystem.get());
+        inputHandler = std::make_unique<InputHandler>(*engine, sonarSystem.get(), powerSystem.get(),
+                                                     depthControl.get(), targetingSystem.get(), safetySystem.get());
         statusPanel = std::make_unique<StatusPanel>(*engine, powerSystem.get());
         controlsPanel = std::make_unique<ControlsPanel>(safetySystem.get());
-        sonarDisplay = std::make_unique<SonarDisplay>(*engine, sonarSystem.get(), safetySystem.get());
+        sonarDisplay = std::make_unique<SonarDisplay>(*engine, sonarSystem.get(), safetySystem.get(), contactManager.get());
         interactiveControls = std::make_unique<InteractiveControls>(*engine, safetySystem.get(), depthControl.get());
         uiController = std::make_unique<UiController>(*engine, sonarSystem.get(), powerSystem.get(),
                                                      depthControl.get(), targetingSystem.get(), 
-                                                     safetySystem.get(), environmentSystem.get());
+                                                     safetySystem.get(), environmentSystem.get(), contactManager.get());
         logger = std::make_unique<LoggingSystem>();
     }
 
@@ -46,6 +46,7 @@ protected:
     std::unique_ptr<DepthControl> depthControl;
     std::unique_ptr<TargetingSystem> targetingSystem;
     std::unique_ptr<EnvironmentSystem> environmentSystem;
+    std::unique_ptr<ContactManager> contactManager;  // Added ContactManager
     
     std::unique_ptr<InputHandler> inputHandler;
     std::unique_ptr<StatusPanel> statusPanel;

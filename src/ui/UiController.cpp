@@ -8,13 +8,14 @@ UiController::UiController(SimulationEngine& engine,
                            DepthControl* depth,
                            TargetingSystem* targeting,
                            SafetySystem* safety,
-                           EnvironmentSystem* environment)
-    : engine(engine), sonar(sonar), power(power), depth(depth), targeting(targeting), safety(safety), environment(environment) {
+                           EnvironmentSystem* environment,
+                           ContactManager* contactManager)
+    : engine(engine), sonar(sonar), power(power), depth(depth), targeting(targeting), safety(safety), environment(environment), contactManager(contactManager) {
     
     // Initialize UI components
     inputHandler = std::make_unique<InputHandler>(engine, sonar, power, depth, targeting, safety);
     statusPanel = std::make_unique<StatusPanel>(engine, power);
-    sonarDisplay = std::make_unique<SonarDisplay>(engine, sonar, safety);
+    sonarDisplay = std::make_unique<SonarDisplay>(engine, sonar, safety, contactManager);
     interactiveControls = std::make_unique<InteractiveControls>(engine, safety, depth);
     loggingSystem = std::make_unique<LoggingSystem>();
     

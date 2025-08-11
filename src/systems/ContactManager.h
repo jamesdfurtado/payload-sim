@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <functional>
 #include <raylib.h>
 #include "../simulation/SimulationEngine.h"
 
@@ -58,14 +59,28 @@ public:
     const MissileState& getMissileState() const { return missileState; }
     bool isMissileActive() const { return missileState.active; }
     
+    // Public missile launch method for external systems
+    bool launchMissileAtTarget(uint32_t targetId, const Vector2& launchPosition = {0, 0});
+
     // Utility
     size_t getContactCount() const { return activeContacts.size(); }
     bool hasContact(uint32_t id) const;
+
+    // Contact spawning management
+    void spawnContactsIfNeeded();
+    void setSpawnTimer(float timer) { spawnTimer = timer; }
+    float getSpawnTimer() const { return spawnTimer; }
+    void updateSpawnTimer(float dt);
+
+    // Target tracking callback
+    void setTargetTrackingCallback(std::function<void(uint32_t)> callback) { targetTrackingCallback = callback; }
 
 private:
     std::vector<SonarContact> activeContacts;
     uint32_t nextContactId;
     MissileState missileState;
+    float spawnTimer = 0.0f;  // Added for automatic spawning
+    std::function<void(uint32_t)> targetTrackingCallback;  // Callback for target tracking
     
     // Missile constants
     static constexpr float MISSILE_SPEED = 300.0f;  // Increased from 100.0f for 3x faster movement

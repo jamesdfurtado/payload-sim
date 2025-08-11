@@ -1,11 +1,13 @@
 #include <gtest/gtest.h>
 #include "systems/SonarSystem.h"
+#include "systems/ContactManager.h"
 #include <raylib.h>
 
 class SonarSystemTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        sonarSystem = std::make_unique<SonarSystem>();
+        contactManager = std::make_unique<ContactManager>();
+        sonarSystem = std::make_unique<SonarSystem>(*contactManager);
         
         state.targetValidated = false;
         state.targetAcquired = false;
@@ -14,6 +16,7 @@ protected:
 
     void TearDown() override {}
 
+    std::unique_ptr<ContactManager> contactManager;
     std::unique_ptr<SonarSystem> sonarSystem;
     SimulationState state;
 };
@@ -129,7 +132,7 @@ TEST_F(SonarSystemTest, ContactRemovalWorks) { // Can remove contacts from the l
     if (initialCount > 0) {
         const auto& contacts = sonarSystem->getContacts();
         uint32_t contactId = contacts[0].id;
-        sonarSystem->removeContact(contactId);
+        contactManager->removeContact(contactId);
         EXPECT_EQ(sonarSystem->getContacts().size(), initialCount - 1);
     }
 }

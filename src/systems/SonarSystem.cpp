@@ -1,18 +1,22 @@
 #include "SonarSystem.h"
 #include <cmath>
 
-// Helper function (kept for compatibility)
-static float calculateDistance(const Vector2& a, const Vector2& b) {
-    float dx = a.x - b.x;
-    float dy = a.y - b.y;
-    return sqrtf(dx * dx + dy * dy);
+SonarSystem::SonarSystem(ContactManager& contactManager) : contactManager(contactManager) {
+    // Set up callback for when contacts are removed
+    contactManager.setTargetTrackingCallback([this](uint32_t removedId) {
+        if (removedId == lockedTargetId) {
+            // If removing the currently locked target, disengage crosshair
+            targetAcquired = false;
+            targetValidated = false;
+            lockedTargetId = 0;
+        }
+    });
 }
 
 void SonarSystem::update(SimulationState& state, float dt) {
-    spawnTimer -= dt;
-    
-    // Spawn contacts if needed
-    spawnContactsIfNeeded();
+    // Update spawn timer and spawn contacts if needed
+    contactManager.updateSpawnTimer(dt);
+    contactManager.spawnContactsIfNeeded();
     
     // Update contact positions
     contactManager.updateContactPositions(dt);
@@ -46,7 +50,10 @@ void SonarSystem::update(SimulationState& state, float dt) {
         bool friendlyInside = false;
         
         // Check if player submarine is in blast radius
-        if (calculateDistance({0,0}, lockedTarget) < blastRadius) {
+        float dx = lockedTarget.x;
+        float dy = lockedTarget.y;
+        float distance = sqrtf(dx * dx + dy * dy);
+        if (distance < blastRadius) {
             friendlyInside = true;
         }
         
@@ -74,49 +81,6 @@ void SonarSystem::attemptManualLock(const Vector2& cursorWorldPos) {
     }
 }
 
-void SonarSystem::removeContact(uint32_t id) {
-    if (id == lockedTargetId) {
-        // If removing the currently locked target, disengage crosshair
-        targetAcquired = false;
-        targetValidated = false;
-        lockedTargetId = 0;
-    }
-    
-    contactManager.removeContact(id);
-}
-
-void SonarSystem::spawnContactsIfNeeded() {
-    // Ensure board is populated at all times
-    while (contactManager.getContactCount() < 10) {
-        contactManager.spawnContact();
-    }
-    
-    // If there are no enemies on the board, force-spawn one (up to the cap)
-    {
-        bool enemyPresent = false;
-        const auto& contacts = contactManager.getActiveContacts();
-        for (const auto& c : contacts) {
-            if (c.type == ContactType::EnemySub) { enemyPresent = true; break; }
-        }
-        if (!enemyPresent && contactManager.getContactCount() < 20) {
-            contactManager.spawnContact();
-        }
-    }
-
-    if (spawnTimer <= 0.0f && contactManager.getContactCount() < 20) {
-        contactManager.spawnContact();
-        spawnTimer = 1.5f + ((float)GetRandomValue(0, 10000) / 10000.0f) * 2.0f;
-    }
-}
-
-// New method to launch missile
-void SonarSystem::launchMissile() {
-    if (targetAcquired && lockedTargetId != 0) {
-        contactManager.launchMissile(lockedTargetId, {0, 0}); // Launch from submarine center
-    }
-}
-
-// Get missile state for UI
 const MissileState& SonarSystem::getMissileState() const {
     return contactManager.getMissileState();
 }

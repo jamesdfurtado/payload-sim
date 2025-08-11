@@ -25,7 +25,8 @@ public:
                  DepthControl* depth,
                  TargetingSystem* targeting,
                  SafetySystem* safety,
-                 EnvironmentSystem* environment);
+                 EnvironmentSystem* environment,
+                 ContactManager* contactManager);
 
     void update(float dt);
     void render();
@@ -40,6 +41,7 @@ private:
     TargetingSystem* targeting = nullptr;
     SafetySystem* safety = nullptr;
     EnvironmentSystem* environment = nullptr;
+    ContactManager* contactManager = nullptr;  // Added ContactManager reference
 
     // UI Components
     std::unique_ptr<InputHandler> inputHandler;

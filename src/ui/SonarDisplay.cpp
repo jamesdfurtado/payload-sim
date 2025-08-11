@@ -2,6 +2,7 @@
 #include "../simulation/SimulationEngine.h"
 #include "../systems/SonarSystem.h"
 #include "../systems/SafetySystem.h"
+#include "../systems/ContactManager.h"
 #include <cmath>
 
 // Helper function to calculate distance between two Vector2 points
@@ -11,11 +12,8 @@ static float calculateDistance(const Vector2& a, const Vector2& b) {
     return sqrtf(dx * dx + dy * dy);
 }
 
-// Constants for missile display
-static constexpr float EXPLOSION_DURATION = 0.4f;  // Updated to match backend
-
-SonarDisplay::SonarDisplay(SimulationEngine& engine, SonarSystem* sonar, SafetySystem* safety)
-    : engine(engine), sonar(sonar), safety(safety) {
+SonarDisplay::SonarDisplay(SimulationEngine& engine, SonarSystem* sonar, SafetySystem* safety, ContactManager* contactManager)
+    : engine(engine), sonar(sonar), safety(safety), contactManager(contactManager), missileRenderer() {
 }
 
 void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, const Rectangle& sonarRect) {
@@ -24,22 +22,24 @@ void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, 
         bool nowLaunched = (safety && safety->getPhase() == LaunchPhase::Launched);
         bool hasTarget = (sonar && sonar->isTargetAcquired());
         
-        // Launch missile if we're in launched phase and have a target
-        if (nowLaunched && hasTarget) {
-            sonar->launchMissile();
+        // Reset launch flag if we're no longer in launched phase
+        if (!nowLaunched) {
+            missileLaunchedThisPhase = false;
+        }
+        
+        // Launch missile if we're in launched phase, have a target, and haven't launched yet this phase
+        if (nowLaunched && hasTarget && contactManager && !missileLaunchedThisPhase) {
+            uint32_t targetId = sonar->getLockedTargetId();
+            if (targetId != 0) {
+                contactManager->launchMissileAtTarget(targetId, {0, 0}); // Launch from submarine center
+                missileLaunchedThisPhase = true; // Mark that we've launched this phase
+            }
             
             // Immediately get the updated missile state after launch
-            if (sonar) {
-                const auto& contactManagerState = sonar->getMissileState();
+            if (contactManager) {
+                const auto& contactManagerState = contactManager->getMissileState();
                 if (contactManagerState.active) {
                     missileState = contactManagerState;
-                    // Convert to screen coordinates immediately
-                    missileState.position = worldToScreen(missileState.position, sonarRect);
-                    missileState.target = worldToScreen(missileState.target, sonarRect);
-                    missileState.trail.clear();
-                    for (const auto& worldPos : contactManagerState.trail) {
-                        missileState.trail.push_back(worldToScreen(worldPos, sonarRect));
-                    }
                 }
             }
         }
@@ -47,32 +47,24 @@ void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, 
     }
 
     // Get the latest missile state from ContactManager every frame
-    if (sonar) {
-        const auto& contactManagerState = sonar->getMissileState();
+    if (contactManager) {
+        const auto& contactManagerState = contactManager->getMissileState();
         
         // Only update if the missile state has actually changed
         if (contactManagerState.active != missileState.active || 
             contactManagerState.explosionTimer != missileState.explosionTimer ||
             contactManagerState.targetId != missileState.targetId) {
             
+            // Copy the entire missile state to ensure proper synchronization
             missileState = contactManagerState;
         }
         
-        // Convert world coordinates to screen coordinates for display
-        if (missileState.active) {
-            // Convert current position and target to screen coordinates
-            Vector2 screenPos = worldToScreen(missileState.position, sonarRect);
-            Vector2 screenTarget = worldToScreen(missileState.target, sonarRect);
-            
-            // Update the missile state with screen coordinates
-            missileState.position = screenPos;
-            missileState.target = screenTarget;
-            
-            // Convert trail positions to screen coordinates
+        // Special case: if explosion timer is finished but missile still shows as active,
+        // ensure we sync with the backend state to prevent UI desync
+        if (missileState.explosionTimer <= 0.0f && missileState.active && 
+            contactManagerState.explosionTimer <= 0.0f) {
+            missileState.active = false;
             missileState.trail.clear();
-            for (const auto& worldPos : contactManagerState.trail) {
-                missileState.trail.push_back(worldToScreen(worldPos, sonarRect));
-            }
         }
     }
 }
@@ -88,12 +80,9 @@ void SonarDisplay::drawSonar(Rectangle r, const MissileState& missileState) {
     drawSonarContacts(r);
     drawTargetLock(r);
     
+    // Use MissileRenderer for all missile rendering
     if (missileState.active) {
-        drawMissileTrail(missileState);
-        drawMissile(missileState);
-        if (missileState.explosionTimer > 0.0f) {
-            drawExplosion(missileState);
-        }
+        missileRenderer.renderMissile(missileState, r);
     }
     
     drawMouseReticle(r);
@@ -154,28 +143,6 @@ void SonarDisplay::drawTargetLock(Rectangle r) {
         DrawLine(static_cast<int>(sp.x) - 16, static_cast<int>(sp.y), static_cast<int>(sp.x) + 16, static_cast<int>(sp.y), YELLOW);
         DrawLine(static_cast<int>(sp.x), static_cast<int>(sp.y) - 16, static_cast<int>(sp.x), static_cast<int>(sp.y) + 16, YELLOW);
     }
-}
-
-void SonarDisplay::drawMissileTrail(const MissileState& missileState) {
-    // Draw trail lines between positions
-    for (size_t i = 1; i < missileState.trail.size(); ++i) {
-        DrawLineEx(missileState.trail[i-1], missileState.trail[i], 2.0f, Fade(GRAY, 0.5f));
-    }
-    
-    // If there's only one position in trail, draw a small dot to show the trail start
-    if (missileState.trail.size() == 1) {
-        DrawCircle(static_cast<int>(missileState.trail[0].x), static_cast<int>(missileState.trail[0].y), 2, Fade(GRAY, 0.3f));
-    }
-}
-
-void SonarDisplay::drawMissile(const MissileState& missileState) {
-    DrawCircle(static_cast<int>(missileState.position.x), static_cast<int>(missileState.position.y), 6, ORANGE);
-}
-
-void SonarDisplay::drawExplosion(const MissileState& missileState) {
-    float t = 1.0f - missileState.explosionTimer / EXPLOSION_DURATION;
-    DrawCircle(static_cast<int>(missileState.position.x), static_cast<int>(missileState.position.y), static_cast<int>(24 * t), YELLOW);
-    DrawCircle(static_cast<int>(missileState.position.x), static_cast<int>(missileState.position.y), static_cast<int>(12 * t), RED);
 }
 
 void SonarDisplay::drawSonarGrid(Rectangle r) {

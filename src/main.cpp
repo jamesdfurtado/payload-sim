@@ -2,6 +2,7 @@
 #include <raylib.h>
 #include "ui/UiController.h"
 #include "simulation/SimulationEngine.h"
+#include "systems/ContactManager.h"
 #include "systems/SonarSystem.h"
 #include "systems/PowerSystem.h"
 #include "systems/DepthControl.h"
@@ -18,9 +19,12 @@ int main() {
 
     SimulationEngine engine;
 
+    // Create shared ContactManager instance
+    auto contactManager = std::make_shared<ContactManager>();
+    
     auto power = std::make_shared<PowerSystem>();
     auto depth = std::make_shared<DepthControl>();
-    auto sonar = std::make_shared<SonarSystem>();
+    auto sonar = std::make_shared<SonarSystem>(*contactManager);
     auto targeting = std::make_shared<TargetingSystem>();
     auto environment = std::make_shared<EnvironmentSystem>();
     auto safety = std::make_shared<SafetySystem>();
@@ -32,7 +36,7 @@ int main() {
     engine.registerSystem(environment);
     engine.registerSystem(safety);
 
-    UiController ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), safety.get(), environment.get());
+    UiController ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), safety.get(), environment.get(), contactManager.get());
 
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime();

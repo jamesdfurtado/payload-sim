@@ -6,6 +6,7 @@
 
 class SonarSystem : public ISimSystem {
 public:
+    SonarSystem(ContactManager& contactManager);
     const char* getName() const override { return "SonarSystem"; }
     void update(SimulationState& state, float dt) override;
 
@@ -18,24 +19,19 @@ public:
 
     Vector2 getLockedTarget() const { return lockedTarget; }
 
-    // Contact management
-    void removeContact(uint32_t id);
+    // Target tracking
     uint32_t getLockedTargetId() const { return lockedTargetId; }
 
-    // Missile management
-    void launchMissile();
+    // Missile state access
     const MissileState& getMissileState() const;
 
 private:
-    ContactManager contactManager;
-    float spawnTimer = 0.0f;
+    ContactManager& contactManager;  // Reference to shared ContactManager
 
     bool targetValidated = false;
     bool targetAcquired = false;
-    uint32_t lockedTargetId = 0;  // Changed from index to ID
+    uint32_t lockedTargetId = 0;
     Vector2 lockedTarget{0,0};
-
-    void spawnContactsIfNeeded();
 };
 
 

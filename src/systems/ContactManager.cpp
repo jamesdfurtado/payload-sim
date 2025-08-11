@@ -46,6 +46,10 @@ void ContactManager::removeContact(uint32_t id) {
     for (auto it = activeContacts.begin(); it != activeContacts.end(); ++it) {
         if (it->id == id) {
             activeContacts.erase(it);
+            // Notify target tracking system if callback is set
+            if (targetTrackingCallback) {
+                targetTrackingCallback(id);
+            }
             break;
         }
     }
@@ -269,4 +273,40 @@ float ContactManager::calculateDistance(const Vector2& a, const Vector2& b) {
 
 float ContactManager::rand01() {
     return (float)GetRandomValue(0, 10000) / 10000.0f;
+}
+
+void ContactManager::spawnContactsIfNeeded() {
+    // Ensure board is populated at all times
+    while (activeContacts.size() < 10) {
+        spawnContact();
+    }
+    
+    // If there are no enemies on the board, force-spawn one (up to the cap)
+    {
+        bool enemyPresent = false;
+        for (const auto& c : activeContacts) {
+            if (c.type == ContactType::EnemySub) { enemyPresent = true; break; }
+        }
+        if (!enemyPresent && activeContacts.size() < 20) {
+            spawnContact();
+        }
+    }
+
+    if (spawnTimer <= 0.0f && activeContacts.size() < 20) {
+        spawnContact();
+        spawnTimer = 1.5f + ((float)GetRandomValue(0, 10000) / 10000.0f) * 2.0f;
+    }
+}
+
+void ContactManager::updateSpawnTimer(float dt) {
+    spawnTimer -= dt;
+}
+
+bool ContactManager::launchMissileAtTarget(uint32_t targetId, const Vector2& launchPosition) {
+    if (!hasContact(targetId)) {
+        return false; // Can't launch if target doesn't exist
+    }
+    
+    launchMissile(targetId, launchPosition);
+    return true;
 }
