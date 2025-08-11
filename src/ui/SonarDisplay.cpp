@@ -32,17 +32,8 @@ void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, 
             missileState.explosionTimer = 0.0f;
             missileState.targetValid = true; // Target is valid at launch
             
-            // Find target index for heat-seeking
-            const auto& contacts = sonar->getContacts();
-            missileState.targetIndex = -1;
-            for (int i = 0; i < (int)contacts.size(); ++i) {
-                if (contacts[i].type == ContactType::EnemySub && 
-                    fabsf(contacts[i].position.x - sonar->getLockedTarget().x) < 1e-2f && 
-                    fabsf(contacts[i].position.y - sonar->getLockedTarget().y) < 1e-2f) {
-                    missileState.targetIndex = i;
-                    break;
-                }
-            }
+            // Store the target ID for tracking
+            missileState.targetId = sonar->getLockedTargetId();
         }
         return;
     }
@@ -52,37 +43,15 @@ void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, 
         missileState.explosionTimer -= dt;
         if (missileState.explosionTimer <= 0.0f && sonar) {
             // Attempt target removal when explosion completes
-            if (missileState.targetValid) {
-                const auto& contacts = sonar->getContacts();
-                bool targetRemoved = false;
-                
-                // First try to remove by stored target index if still valid
-                if (missileState.targetIndex >= 0 && missileState.targetIndex < (int)contacts.size()) {
-                    if (contacts[missileState.targetIndex].type == ContactType::EnemySub &&
-                        calculateDistance(contacts[missileState.targetIndex].position, missileState.originalTargetWorld) < 50.0f) {
-                        // Remove enemy and disengage lock
-                        sonar->removeContact(missileState.targetIndex);
-                        targetRemoved = true;
-                    }
-                }
-                
-                // Fallback: search by position with reasonable blast radius
-                if (!targetRemoved) {
-                    for (int i = 0; i < (int)contacts.size(); ++i) {
-                        if (contacts[i].type == ContactType::EnemySub &&
-                            calculateDistance(contacts[i].position, missileState.originalTargetWorld) < 50.0f) {
-                            sonar->removeContact(i);
-                            targetRemoved = true;
-                            break;
-                        }
-                    }
-                }
+            if (missileState.targetValid && missileState.targetId != 0) {
+                // Remove enemy by ID
+                sonar->removeContact(missileState.targetId);
             }
             // Missile completes
             missileState.active = false;
             missileState.explosionTimer = 0.0f;
             missileState.targetValid = false;
-            missileState.targetIndex = -1;
+            missileState.targetId = 0;
         }
         return;
     }
@@ -91,19 +60,24 @@ void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, 
     Vector2 targetWorld = missileState.originalTargetWorld;
     
     // Update target validity status for explosion phase
-    if (sonar && missileState.targetIndex >= 0) {
+    if (sonar && missileState.targetId != 0) {
+        // Check if target is still alive and within reasonable distance
         const auto& contacts = sonar->getContacts();
-        if (missileState.targetIndex < (int)contacts.size() && 
-            contacts[missileState.targetIndex].type == ContactType::EnemySub &&
-            calculateDistance(contacts[missileState.targetIndex].position, missileState.originalTargetWorld) < 100.0f) {
-            // Target is still valid
-            missileState.targetValid = true;
-        } else {
-            // Target is no longer valid (went off map or changed type)
-            missileState.targetValid = false;
+        bool targetStillValid = false;
+        
+        for (const auto& contact : contacts) {
+            if (contact.id == missileState.targetId) {
+                if (contact.type == ContactType::EnemySub &&
+                    calculateDistance(contact.position, missileState.originalTargetWorld) < 100.0f) {
+                    targetStillValid = true;
+                }
+                break;
+            }
         }
+        
+        missileState.targetValid = targetStillValid;
     } else {
-        // No valid target index, target is invalid
+        // No valid target ID, target is invalid
         missileState.targetValid = false;
     }
     

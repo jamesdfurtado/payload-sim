@@ -1,25 +1,15 @@
 #pragma once
 
-#include <vector>
 #include <raylib.h>
 #include "../simulation/SimulationEngine.h"
-
-enum class ContactType { EnemySub, FriendlySub, Fish, Debris };
-
-struct SonarContact {
-    Vector2 position;
-    float velocityDirRad;
-    float speed;
-    ContactType type;
-    bool isVisible = true;
-};
+#include "ContactManager.h"
 
 class SonarSystem : public ISimSystem {
 public:
     const char* getName() const override { return "SonarSystem"; }
     void update(SimulationState& state, float dt) override;
 
-    const std::vector<SonarContact>& getContacts() const { return contacts; }
+    const std::vector<SonarContact>& getContacts() const { return contactManager.getActiveContacts(); }
 
     // Player interactions
     void attemptManualLock(const Vector2& cursorWorldPos);
@@ -28,18 +18,20 @@ public:
 
     Vector2 getLockedTarget() const { return lockedTarget; }
 
-    void removeContact(int idx);  // Moved to .cpp for proper target disengagement
+    // Contact management
+    void removeContact(uint32_t id);
+    uint32_t getLockedTargetId() const { return lockedTargetId; }
 
 private:
-    std::vector<SonarContact> contacts;
+    ContactManager contactManager;
     float spawnTimer = 0.0f;
 
     bool targetValidated = false;
     bool targetAcquired = false;
-    int lockedTargetIdx = -1;
+    uint32_t lockedTargetId = 0;  // Changed from index to ID
     Vector2 lockedTarget{0,0};
 
-    void spawnContact();
+    void spawnContactsIfNeeded();
 };
 
 

@@ -127,7 +127,9 @@ TEST_F(SonarSystemTest, ContactRemovalWorks) { // Can remove contacts from the l
     
     size_t initialCount = sonarSystem->getContacts().size();
     if (initialCount > 0) {
-        sonarSystem->removeContact(0);
+        const auto& contacts = sonarSystem->getContacts();
+        uint32_t contactId = contacts[0].id;
+        sonarSystem->removeContact(contactId);
         EXPECT_EQ(sonarSystem->getContacts().size(), initialCount - 1);
     }
 }

@@ -57,7 +57,7 @@ void UiController::update(float dt) {
                 missileState.active = false;
                 missileState.explosionTimer = 0.0f;
                 missileState.targetValid = false;
-                missileState.targetIndex = -1;
+                missileState.targetId = 0;
                 break;
         }
         
@@ -82,7 +82,7 @@ void UiController::update(float dt) {
             missileState.active = false;
             missileState.explosionTimer = 0.0f;
             missileState.targetValid = false;
-            missileState.targetIndex = -1;
+            missileState.targetId = 0;
         }
         
         previousPhase = safety->getPhase();

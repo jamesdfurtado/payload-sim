@@ -20,8 +20,8 @@ public:
         std::vector<Vector2> trail;
         float progress = 0.0f;
         float explosionTimer = 0.0f;
-        int targetIndex = -1;
-        bool targetValid = true;  // Track if target is still valid during flight
+        uint32_t targetId = 0;        // Changed from targetIndex to targetId
+        bool targetValid = true;      // Track if target is still valid during flight
     };
 
     void updateMissileAnimation(float dt, MissileState& missileState, const Rectangle& sonarRect);

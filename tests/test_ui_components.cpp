@@ -95,7 +95,7 @@ TEST_F(UiComponentsTest, MissileStateInitializesWithDefaults) { // MissileState 
     EXPECT_TRUE(missileState.trail.empty());
     EXPECT_EQ(missileState.progress, 0.0f);
     EXPECT_EQ(missileState.explosionTimer, 0.0f);
-    EXPECT_EQ(missileState.targetIndex, -1);
+    EXPECT_EQ(missileState.targetId, 0);
 }
 
 TEST_F(UiComponentsTest, SonarDisplayCoordinateConversion) { // Coordinate conversion works correctly
