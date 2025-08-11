@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
+#include <string>
 
 InteractiveControls::InteractiveControls(SimulationEngine& engine, SafetySystem* safety, DepthControl* depth)
     : engine(engine), safety(safety), depth(depth) {
@@ -99,7 +100,7 @@ void InteractiveControls::updateSafetyButtons(UIState& uiState, Rectangle r, Aut
 
 void InteractiveControls::drawInteractiveControls(Rectangle r, const UIState& uiState, const AuthCode::AuthState& authState) {
     DrawRectangleRec(r, Fade(DARKBROWN, 0.3f));
-    DrawText("Interactive Controls", (int)r.x + 10, (int)r.y + 8, 20, ORANGE);
+    DrawText("Payload Launch Sequence", (int)r.x + 10, (int)r.y + 8, 20, ORANGE);
     
     // Draw safety state buttons
     drawSafetyStateButtons(r, uiState);
@@ -165,10 +166,10 @@ void InteractiveControls::drawSafetyStateButtons(Rectangle r, const UIState& uiS
     bool resetActive = safety && safety->getPhase() != LaunchPhase::Idle && safety->getPhase() != LaunchPhase::Resetting;
     
     // Draw buttons with appropriate lighting and states
-    drawLitButton(authButton, "AUTH", uiState.authButtonLit, authActive, DARKBLUE);
-    drawLitButton(armButton, "ARM", uiState.armButtonLit, armActive, DARKPURPLE);
-    drawLitButton(launchButton, "LAUNCH", uiState.launchButtonLit, launchActive, DARKGREEN);
-    drawLitButton(resetButton, "RESET", uiState.resetButtonLit, resetActive, MAROON);
+    drawLitButton(authButton, "AUTHORIZE\nLAUNCH", uiState.authButtonLit, authActive, DARKBLUE);
+    drawLitButton(armButton, "ARM\nWEAPON", uiState.armButtonLit, armActive, DARKPURPLE);
+    drawLitButton(launchButton, "LAUNCH\nPAYLOAD", uiState.launchButtonLit, launchActive, DARKGREEN);
+    drawLitButton(resetButton, "RESET\nSYSTEM", uiState.resetButtonLit, resetActive, MAROON);
 }
 
 bool InteractiveControls::isButtonPressed(Rectangle buttonRect) {
@@ -203,11 +204,33 @@ void InteractiveControls::drawLitButton(Rectangle buttonRect, const char* text, 
     DrawRectangleRec(buttonRect, buttonColor);
     DrawRectangleLinesEx(buttonRect, 2, borderColor);
     
-    // Center the text
-    int textWidth = MeasureText(text, 16);
-    int textX = (int)(buttonRect.x + (buttonRect.width - textWidth) / 2);
-    int textY = (int)(buttonRect.y + (buttonRect.height - 16) / 2);
-    DrawText(text, textX, textY, 16, textColor);
+    // Handle multi-line text
+    const char* line1 = text;
+    const char* line2 = strchr(text, '\n');
+    
+    if (line2) {
+        // Two-line text - create temporary strings to avoid modifying const literals
+        std::string firstLine(line1, line2 - line1);
+        std::string secondLine(line2 + 1);
+        
+        // Draw first line
+        int textWidth1 = MeasureText(firstLine.c_str(), 16);
+        int textX1 = (int)(buttonRect.x + (buttonRect.width - textWidth1) / 2);
+        int textY1 = (int)(buttonRect.y + (buttonRect.height - 32) / 2);
+        DrawText(firstLine.c_str(), textX1, textY1, 16, textColor);
+        
+        // Draw second line
+        int textWidth2 = MeasureText(secondLine.c_str(), 16);
+        int textX2 = (int)(buttonRect.x + (buttonRect.width - textWidth2) / 2);
+        int textY2 = (int)(buttonRect.y + (buttonRect.height - 32) / 2 + 20);
+        DrawText(secondLine.c_str(), textX2, textY2, 16, textColor);
+    } else {
+        // Single-line text
+        int textWidth = MeasureText(text, 16);
+        int textX = (int)(buttonRect.x + (buttonRect.width - textWidth) / 2);
+        int textY = (int)(buttonRect.y + (buttonRect.height - 16) / 2);
+        DrawText(text, textX, textY, 16, textColor);
+    }
     
     // Add glow effect for lit buttons
     if (isLit && isActive) {
@@ -242,6 +265,9 @@ void InteractiveControls::processResetRequest() {
 void InteractiveControls::drawDepthControlInPanel(Rectangle depthPanelRect, const UIState& uiState) {
     // Create throttle rect that's better positioned within the depth panel
     Rectangle throttleRect = { depthPanelRect.x + 200, depthPanelRect.y + 35, 50, depthPanelRect.height - 45 };
+    
+    // Draw "Depth throttle" label above the throttle
+    DrawText("Depth throttle", (int)throttleRect.x, (int)throttleRect.y - 25, 16, LIME);
     
     // Draw throttle background
     DrawRectangleRec(throttleRect, Fade(DARKGRAY, 0.8f));
