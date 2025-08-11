@@ -9,6 +9,7 @@
 #include "../systems/TargetingSystem.h"
 #include "../systems/SafetySystem.h"
 #include "../systems/EnvironmentSystem.h"
+#include "../systems/ContactManager.h"
 #include "InputHandler.h"
 #include "StatusPanel.h"
 #include "SonarDisplay.h"
@@ -49,7 +50,7 @@ private:
 
     // Component state
     InputHandler::InputState inputState;
-    SonarDisplay::MissileState missileState;
+    MissileState missileState;  // Now using MissileState from ContactManager
     InteractiveControls::UIState uiState;
     AuthCode::AuthState authState;
     float uiWeaponsPower = 0.5f; // Weapons power state

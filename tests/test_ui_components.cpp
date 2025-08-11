@@ -13,6 +13,7 @@
 #include "systems/DepthControl.h"
 #include "systems/TargetingSystem.h"
 #include "systems/EnvironmentSystem.h"
+#include "systems/ContactManager.h"
 
 class UiComponentsTest : public ::testing::Test {
 protected:
@@ -83,7 +84,7 @@ TEST_F(UiComponentsTest, InputStateInitializesWithDefaults) { // InputState has 
 }
 
 TEST_F(UiComponentsTest, MissileStateInitializesWithDefaults) { // MissileState has correct default values
-    SonarDisplay::MissileState missileState;
+    MissileState missileState;  // Now using MissileState from ContactManager
     
     EXPECT_FALSE(missileState.active);
     EXPECT_EQ(missileState.position.x, 0.0f);
@@ -96,6 +97,7 @@ TEST_F(UiComponentsTest, MissileStateInitializesWithDefaults) { // MissileState 
     EXPECT_EQ(missileState.progress, 0.0f);
     EXPECT_EQ(missileState.explosionTimer, 0.0f);
     EXPECT_EQ(missileState.targetId, 0);
+    EXPECT_TRUE(missileState.targetValid);
 }
 
 TEST_F(UiComponentsTest, SonarDisplayCoordinateConversion) { // Coordinate conversion works correctly
@@ -121,7 +123,7 @@ TEST_F(UiComponentsTest, InputHandlerCanBeUpdated) { // InputHandler update meth
 }
 
 TEST_F(UiComponentsTest, SonarDisplayCanBeUpdated) { // SonarDisplay update method can be called without errors
-    SonarDisplay::MissileState missileState;
+    MissileState missileState;
     Rectangle sonarRect = {0, 0, 600, 400};
     
     EXPECT_NO_THROW(sonarDisplay->updateMissileAnimation(0.016f, missileState, sonarRect));

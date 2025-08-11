@@ -20,6 +20,9 @@ void SonarSystem::update(SimulationState& state, float dt) {
     // Remove out of bounds contacts
     contactManager.removeOutOfBoundsContacts();
     
+    // Update missile if active
+    contactManager.updateMissile(dt);
+    
     // Handle target tracking
     if (targetAcquired && lockedTargetId != 0) {
         const SonarContact* targetContact = contactManager.findContactById(lockedTargetId);
@@ -92,6 +95,18 @@ void SonarSystem::spawnContactsIfNeeded() {
         contactManager.spawnContact();
         spawnTimer = 1.5f + ((float)GetRandomValue(0, 10000) / 10000.0f) * 2.0f;
     }
+}
+
+// New method to launch missile
+void SonarSystem::launchMissile() {
+    if (targetAcquired && lockedTargetId != 0) {
+        contactManager.launchMissile(lockedTargetId, {0, 0}); // Launch from submarine center
+    }
+}
+
+// Get missile state for UI
+const MissileState& SonarSystem::getMissileState() const {
+    return contactManager.getMissileState();
 }
 
 

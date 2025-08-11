@@ -121,6 +121,127 @@ bool ContactManager::hasContact(uint32_t id) const {
     return findContactById(id) != nullptr;
 }
 
+// Missile Management Methods
+void ContactManager::launchMissile(uint32_t targetId, const Vector2& launchPosition) {
+    if (!hasContact(targetId)) {
+        return; // Can't launch if target doesn't exist
+    }
+    
+    missileState.active = true;
+    missileState.trail.clear();
+    missileState.position = launchPosition;
+    missileState.targetId = targetId;
+    missileState.targetValid = true;
+    missileState.explosionTimer = 0.0f;
+    missileState.progress = 0.0f;
+    
+    // Set initial target position
+    const SonarContact* target = findContactById(targetId);
+    if (target) {
+        missileState.target = target->position;
+    }
+    
+    // Add initial position to trail for smooth animation
+    missileState.trail.push_back(launchPosition);
+}
+
+void ContactManager::updateMissile(float dt) {
+    if (!missileState.active) {
+        return;
+    }
+    
+    // Check if target still exists
+    if (missileState.targetId != 0 && !hasContact(missileState.targetId)) {
+        // Target was destroyed, explode immediately
+        missileState.explosionTimer = EXPLOSION_DURATION;
+        missileState.targetValid = false;
+    }
+    
+    if (missileState.explosionTimer > 0.0f) {
+        updateMissileExplosion(dt);
+    } else {
+        updateMissileFlight(dt);
+    }
+}
+
+void ContactManager::updateMissileFlight(float dt) {
+    // Update target position if target still exists
+    if (missileState.targetId != 0 && hasContact(missileState.targetId)) {
+        const SonarContact* target = findContactById(missileState.targetId);
+        if (target) {
+            missileState.target = target->position;
+            missileState.targetValid = true;
+        }
+    } else {
+        missileState.targetValid = false;
+    }
+    
+    // Calculate missile movement
+    Vector2 toTarget = {missileState.target.x - missileState.position.x, missileState.target.y - missileState.position.y};
+    float dist = sqrtf(toTarget.x * toTarget.x + toTarget.y * toTarget.y);
+    
+    if (dist > 1.0f) {
+        // Move missile towards target
+        Vector2 velocity = {toTarget.x / dist * MISSILE_SPEED * dt, toTarget.y / dist * MISSILE_SPEED * dt};
+        missileState.position.x += velocity.x;
+        missileState.position.y += velocity.y;
+        missileState.velocity = velocity;
+        
+        // Update trail more frequently for smooth animation
+        missileState.trail.push_back(missileState.position);
+        if (missileState.trail.size() > 60) {  // Increased from 40 to 60 for smoother trail
+            missileState.trail.erase(missileState.trail.begin());
+        }
+        
+        // Check for collision
+        if (dist < MISSILE_COLLISION_DISTANCE) {
+            handleMissileCollision();
+        }
+    } else {
+        // Missile reached target
+        missileState.position = missileState.target;
+        handleMissileCollision();
+    }
+}
+
+void ContactManager::updateMissileExplosion(float dt) {
+    missileState.explosionTimer -= dt;
+    
+    if (missileState.explosionTimer <= 0.0f) {
+        // Explosion complete, destroy target if it still exists
+        if (missileState.targetValid && missileState.targetId != 0 && hasContact(missileState.targetId)) {
+            removeContact(missileState.targetId);
+        }
+        
+        // Reset missile state
+        missileState.active = false;
+        missileState.explosionTimer = 0.0f;
+        missileState.targetValid = false;
+        missileState.targetId = 0;
+        missileState.trail.clear();
+    }
+}
+
+void ContactManager::handleMissileCollision() {
+    // Start explosion phase
+    missileState.explosionTimer = EXPLOSION_DURATION;
+    
+    // If target is still valid, mark it for destruction
+    if (missileState.targetValid && missileState.targetId != 0 && hasContact(missileState.targetId)) {
+        // Target will be destroyed when explosion completes
+    }
+}
+
+bool ContactManager::isTargetInRange(uint32_t targetId, const Vector2& position, float maxDistance) {
+    const SonarContact* target = findContactById(targetId);
+    if (!target) {
+        return false;
+    }
+    
+    float distance = calculateDistance(target->position, position);
+    return distance < maxDistance;
+}
+
 void ContactManager::adjustTargetIndicesAfterRemoval(size_t /* removedIndex */) {
     // This method is kept for compatibility but shouldn't be needed with ID-based system
     // Left empty as we're moving away from index-based tracking

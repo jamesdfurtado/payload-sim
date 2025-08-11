@@ -26,7 +26,7 @@ void UiController::update(float dt) {
     Rectangle sonarRect{ 20, 120, 600, 580 };
     inputHandler->handleSonarClick(sonarRect);
     
-    // Update missile animation
+    // Update missile animation - now handled by ContactManager
     sonarDisplay->updateMissileAnimation(dt, missileState, sonarRect);
     
     // Handle targeting controls (Q/E keys still work)
@@ -53,11 +53,6 @@ void UiController::update(float dt) {
                 } else {
                     loggingSystem->addPhaseMessage("System RESETTING...");
                 }
-                // Reset missile state when system resets
-                missileState.active = false;
-                missileState.explosionTimer = 0.0f;
-                missileState.targetValid = false;
-                missileState.targetId = 0;
                 break;
         }
         
@@ -75,14 +70,6 @@ void UiController::update(float dt) {
         static LaunchPhase previousPhase = LaunchPhase::Idle;
         if (previousPhase == LaunchPhase::Resetting && safety->getPhase() == LaunchPhase::Idle) {
             loggingSystem->addSystemReset();
-        }
-        
-        // Reset missile state when transitioning from Launched to other phases
-        if (previousPhase == LaunchPhase::Launched && safety->getPhase() != LaunchPhase::Launched) {
-            missileState.active = false;
-            missileState.explosionTimer = 0.0f;
-            missileState.targetValid = false;
-            missileState.targetId = 0;
         }
         
         previousPhase = safety->getPhase();

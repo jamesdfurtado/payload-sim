@@ -11,6 +11,9 @@ static float calculateDistance(const Vector2& a, const Vector2& b) {
     return sqrtf(dx * dx + dy * dy);
 }
 
+// Constants for missile display
+static constexpr float EXPLOSION_DURATION = 0.6f;
+
 SonarDisplay::SonarDisplay(SimulationEngine& engine, SonarSystem* sonar, SafetySystem* safety)
     : engine(engine), sonar(sonar), safety(safety) {
 }
@@ -23,83 +26,54 @@ void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, 
         
         // Launch missile if we're in launched phase and have a target
         if (nowLaunched && hasTarget) {
-            missileState.active = true;
-            missileState.trail.clear();
-            missileState.position = worldToScreen({0,0}, sonarRect); // launch from sub center
-            missileState.target = worldToScreen(sonar->getLockedTarget(), sonarRect);
-            missileState.originalTargetWorld = sonar->getLockedTarget(); // Store original target in world coordinates
-            missileState.progress = 0.0f;
-            missileState.explosionTimer = 0.0f;
-            missileState.targetValid = true; // Target is valid at launch
+            sonar->launchMissile();
             
-            // Store the target ID for tracking
-            missileState.targetId = sonar->getLockedTargetId();
-        }
-        return;
-    }
-
-    // Handle explosion phase
-    if (missileState.explosionTimer > 0.0f) {
-        missileState.explosionTimer -= dt;
-        if (missileState.explosionTimer <= 0.0f && sonar) {
-            // Attempt target removal when explosion completes
-            if (missileState.targetValid && missileState.targetId != 0) {
-                // Remove enemy by ID
-                sonar->removeContact(missileState.targetId);
-            }
-            // Missile completes
-            missileState.active = false;
-            missileState.explosionTimer = 0.0f;
-            missileState.targetValid = false;
-            missileState.targetId = 0;
-        }
-        return;
-    }
-
-    // Handle missile flight
-    Vector2 targetWorld = missileState.originalTargetWorld;
-    
-    // Update target validity status for explosion phase
-    if (sonar && missileState.targetId != 0) {
-        // Check if target is still alive and within reasonable distance
-        const auto& contacts = sonar->getContacts();
-        bool targetStillValid = false;
-        
-        for (const auto& contact : contacts) {
-            if (contact.id == missileState.targetId) {
-                if (contact.type == ContactType::EnemySub &&
-                    calculateDistance(contact.position, missileState.originalTargetWorld) < 100.0f) {
-                    targetStillValid = true;
+            // Immediately get the updated missile state after launch
+            if (sonar) {
+                const auto& contactManagerState = sonar->getMissileState();
+                if (contactManagerState.active) {
+                    missileState = contactManagerState;
+                    // Convert to screen coordinates immediately
+                    missileState.position = worldToScreen(missileState.position, sonarRect);
+                    missileState.target = worldToScreen(missileState.target, sonarRect);
+                    missileState.trail.clear();
+                    for (const auto& worldPos : contactManagerState.trail) {
+                        missileState.trail.push_back(worldToScreen(worldPos, sonarRect));
+                    }
                 }
-                break;
             }
         }
-        
-        missileState.targetValid = targetStillValid;
-    } else {
-        // No valid target ID, target is invalid
-        missileState.targetValid = false;
+        return;
     }
-    
-    missileState.target = worldToScreen(targetWorld, sonarRect);
-    float speed = MISSILE_SPEED;
-    Vector2 toTarget = {missileState.target.x - missileState.position.x, missileState.target.y - missileState.position.y};
-    float dist = sqrtf(toTarget.x * toTarget.x + toTarget.y * toTarget.y);
-    
-    if (dist > 1.0f) {
-        missileState.velocity = {toTarget.x / dist * speed * dt, toTarget.y / dist * speed * dt};
-        missileState.position.x += missileState.velocity.x;
-        missileState.position.y += missileState.velocity.y;
-        missileState.trail.push_back(missileState.position);
-        if (missileState.trail.size() > 40) missileState.trail.erase(missileState.trail.begin());
+
+    // Get the latest missile state from ContactManager every frame
+    if (sonar) {
+        const auto& contactManagerState = sonar->getMissileState();
         
-        if (dist < 16.0f) {
-            missileState.position = missileState.target;
-            missileState.explosionTimer = EXPLOSION_DURATION;
+        // Only update if the missile state has actually changed
+        if (contactManagerState.active != missileState.active || 
+            contactManagerState.explosionTimer != missileState.explosionTimer ||
+            contactManagerState.targetId != missileState.targetId) {
+            
+            missileState = contactManagerState;
         }
-    } else {
-        missileState.position = missileState.target;
-        missileState.explosionTimer = EXPLOSION_DURATION;
+        
+        // Convert world coordinates to screen coordinates for display
+        if (missileState.active) {
+            // Convert current position and target to screen coordinates
+            Vector2 screenPos = worldToScreen(missileState.position, sonarRect);
+            Vector2 screenTarget = worldToScreen(missileState.target, sonarRect);
+            
+            // Update the missile state with screen coordinates
+            missileState.position = screenPos;
+            missileState.target = screenTarget;
+            
+            // Convert trail positions to screen coordinates
+            missileState.trail.clear();
+            for (const auto& worldPos : contactManagerState.trail) {
+                missileState.trail.push_back(worldToScreen(worldPos, sonarRect));
+            }
+        }
     }
 }
 
@@ -183,10 +157,16 @@ void SonarDisplay::drawTargetLock(Rectangle r) {
 }
 
 void SonarDisplay::drawMissileTrail(const MissileState& missileState) {
+    // Draw trail lines between positions
     for (size_t i = 1; i < missileState.trail.size(); ++i) {
         DrawLine(static_cast<int>(missileState.trail[i-1].x), static_cast<int>(missileState.trail[i-1].y), 
                  static_cast<int>(missileState.trail[i].x), static_cast<int>(missileState.trail[i].y), 
                  Fade(GRAY, 0.5f));
+    }
+    
+    // If there's only one position in trail, draw a small dot to show the trail start
+    if (missileState.trail.size() == 1) {
+        DrawCircle(static_cast<int>(missileState.trail[0].x), static_cast<int>(missileState.trail[0].y), 2, Fade(GRAY, 0.3f));
     }
 }
 

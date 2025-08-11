@@ -2,6 +2,7 @@
 
 #include <raylib.h>
 #include <vector>
+#include "../systems/ContactManager.h"
 
 class SimulationEngine;
 class SonarSystem;
@@ -11,21 +12,8 @@ class SonarDisplay {
 public:
     SonarDisplay(SimulationEngine& engine, SonarSystem* sonar, SafetySystem* safety);
 
-    struct MissileState {
-        bool active = false;
-        Vector2 position{0,0};
-        Vector2 velocity{0,0};
-        Vector2 target{0,0};
-        Vector2 originalTargetWorld{0,0};  // Store original target in world coordinates
-        std::vector<Vector2> trail;
-        float progress = 0.0f;
-        float explosionTimer = 0.0f;
-        uint32_t targetId = 0;        // Changed from targetIndex to targetId
-        bool targetValid = true;      // Track if target is still valid during flight
-    };
-
     void updateMissileAnimation(float dt, MissileState& missileState, const Rectangle& sonarRect);
-    // Note: Once launched, missiles maintain their original trajectory and do not redirect to new targets
+    // Note: Once launched, missiles maintain their trajectory and do not redirect to new targets
     void drawSonar(Rectangle r, const MissileState& missileState);
     void drawMissileTrail(const MissileState& missileState);
     void drawMouseReticle(Rectangle r);
@@ -37,9 +25,6 @@ private:
     SimulationEngine& engine;
     SonarSystem* sonar;
     SafetySystem* safety;
-
-    static constexpr float MISSILE_SPEED = 200.0f;
-    static constexpr float EXPLOSION_DURATION = 0.6f;
 
     void drawSubmarineIcon(Rectangle r);
     void drawSonarGrid(Rectangle r);

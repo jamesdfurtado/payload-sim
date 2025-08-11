@@ -22,6 +22,10 @@ public:
     void removeContact(uint32_t id);
     uint32_t getLockedTargetId() const { return lockedTargetId; }
 
+    // Missile management
+    void launchMissile();
+    const MissileState& getMissileState() const;
+
 private:
     ContactManager contactManager;
     float spawnTimer = 0.0f;
