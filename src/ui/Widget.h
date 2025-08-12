@@ -10,6 +10,7 @@ public:
     virtual void draw() const {}
     virtual bool onMouseDown(Vector2 /*pos*/) { return false; }
     virtual bool onMouseUp(Vector2 /*pos*/) { return false; }
+    virtual bool onMouseMove(Vector2 /*pos*/) { return false; }
 
     void setBounds(const Rectangle& r) { bounds = r; }
     const Rectangle& getBounds() const { return bounds; }
