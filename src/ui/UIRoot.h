@@ -15,6 +15,7 @@
 #include "ui/views/StatusPanel.h"
 #include "ui/views/LogPanel.h"
 #include "ui/views/PowerView.h"
+#include "ui/views/DepthView.h"
 
 class UIRoot {
 public:
@@ -31,19 +32,21 @@ public:
         sonarView = std::make_unique<SonarView>(*contacts);
         statusPanel = std::make_unique<StatusPanel>(engine);
         powerView = std::make_unique<PowerView>(engine, *power);
+        depthView = std::make_unique<DepthView>(engine, *depth);
         logPanel = std::make_unique<LogPanel>();
 
         // Simple layout (manual rects to keep lean)
         sonarView->setBounds({20, 120, 600, 580});
         statusPanel->setBounds({640, 20, 620, 110});
         powerView->setBounds({640, 140, 620, 100});
-        logPanel->setBounds({640, 250, 620, 120});
+        depthView->setBounds({640, 250, 620, 100});
+        logPanel->setBounds({640, 370, 620, 120});
 
         // Wire sonar selection to selecting a target in the sonar system
         sonarView->setOnSelect([this](Vector2 world){ this->sonar->attemptManualLock(world); });
     }
 
-    void update(float /*dt*/) {
+    void update(float dt) {
         // Poll safety phase to log simple milestones
         static LaunchPhase previous = LaunchPhase::Idle;
         LaunchPhase current = safety->getPhase();
@@ -67,13 +70,22 @@ public:
             previous = current;
         }
 
+        // Update all views
+        powerView->update(dt);
+        depthView->update(dt);
+
         // Simple mouse routing
         Vector2 mouse = GetMousePosition();
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if (powerView->onMouseDown(mouse)) {} else if (sonarView->onMouseDown(mouse)) {}
+            if (powerView->onMouseDown(mouse)) {} else if (depthView->onMouseDown(mouse)) {} else if (sonarView->onMouseDown(mouse)) {}
         }
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-            if (powerView->onMouseUp(mouse)) {} else if (sonarView->onMouseUp(mouse)) {}
+            if (powerView->onMouseUp(mouse)) {} else if (depthView->onMouseUp(mouse)) {} else if (sonarView->onMouseUp(mouse)) {}
+        }
+        
+        // Handle mouse movement for dragging
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            if (powerView->onMouseMove(mouse)) {} else if (depthView->onMouseMove(mouse)) {} else if (sonarView->onMouseMove(mouse)) {}
         }
     }
 
@@ -81,6 +93,7 @@ public:
         DrawText("Submarine Payload Launch Control Simulator", 20, 20, 24, RAYWHITE);
         statusPanel->draw();
         powerView->draw();
+        depthView->draw();
         sonarView->draw();
         logPanel->draw();
     }
@@ -97,6 +110,7 @@ private:
     std::unique_ptr<SonarView> sonarView;
     std::unique_ptr<StatusPanel> statusPanel;
     std::unique_ptr<PowerView> powerView;
+    std::unique_ptr<DepthView> depthView;
     std::unique_ptr<LogPanel> logPanel;
 };
 
