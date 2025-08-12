@@ -13,7 +13,7 @@ static float calculateDistance(const Vector2& a, const Vector2& b) {
 }
 
 SonarDisplay::SonarDisplay(SimulationEngine& engine, SonarSystem* sonar, SafetySystem* safety, ContactManager* contactManager)
-    : engine(engine), sonar(sonar), safety(safety), contactManager(contactManager), missileRenderer() {
+    : engine(engine), sonar(sonar), safety(safety), contactManager(contactManager) {
 }
 
 void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, const Rectangle& sonarRect) {
@@ -22,41 +22,26 @@ void SonarDisplay::updateMissileAnimation(float dt, MissileState& missileState, 
         bool nowLaunched = (safety && safety->getPhase() == LaunchPhase::Launched);
         bool hasTarget = (sonar && sonar->isTargetAcquired());
         
-        // Reset launch flag if we're no longer in launched phase
-        if (!nowLaunched) {
-            missileLaunchedThisPhase = false;
-        }
-        
-        // Launch missile if we're in launched phase, have a target, and haven't launched yet this phase
-        if (nowLaunched && hasTarget && contactManager && !missileLaunchedThisPhase) {
+        // Launch missile if we're in launched phase and have a target
+        if (nowLaunched && hasTarget && contactManager) {
             uint32_t targetId = sonar->getLockedTargetId();
             if (targetId != 0) {
                 contactManager->launchMissileAtTarget(targetId, {0, 0}); // Launch from submarine center
-                missileLaunchedThisPhase = true; // Mark that we've launched this phase
-            }
-            
-            // Immediately get the updated missile state after launch
-            if (contactManager) {
-                const auto& contactManagerState = contactManager->getMissileState();
-                if (contactManagerState.active) {
-                    missileState = contactManagerState;
-                }
             }
         }
-        return;
     }
 
-    // Get the latest missile state from ContactManager every frame
+    // ALWAYS get the latest missile state from ContactManager every frame
+    // This ensures the UI stays in sync with the actual missile simulation
     if (contactManager) {
         const auto& contactManagerState = contactManager->getMissileState();
         
-        // Always update the missile state to ensure smooth animation
+        // Update the UI missile state with the latest from ContactManager
         missileState = contactManagerState;
         
-        // Special case: if explosion timer is finished but missile still shows as active,
-        // ensure we sync with the backend state to prevent UI desync
-        if (missileState.explosionTimer <= 0.0f && missileState.active && 
-            contactManagerState.explosionTimer <= 0.0f) {
+        // Handle special cases for UI consistency
+        if (missileState.explosionTimer <= 0.0f && missileState.active) {
+            // Ensure UI reflects the completed explosion state
             missileState.active = false;
             missileState.trail.clear();
         }
@@ -74,12 +59,44 @@ void SonarDisplay::drawSonar(Rectangle r, const MissileState& missileState) {
     drawSonarContacts(r);
     drawTargetLock(r);
     
-    // Use MissileRenderer for all missile rendering
-    if (missileState.active) {
-        missileRenderer.renderMissile(missileState, r);
-    }
+    // Draw missile if active
+    drawMissile(r, missileState);
     
     drawMouseReticle(r);
+}
+
+void SonarDisplay::drawMissile(Rectangle r, const MissileState& missileState) {
+    if (!missileState.active) {
+        return;
+    }
+    
+    // Draw missile trail (fade from bright to dim)
+    if (!missileState.trail.empty()) {
+        for (size_t i = 0; i < missileState.trail.size(); ++i) {
+            float alpha = 0.3f + (0.7f * i / missileState.trail.size()); // Fade from dim to bright
+            Color trailColor = Fade(ORANGE, alpha);
+            
+            Vector2 screenPos = worldToScreen(missileState.trail[i], r);
+            DrawCircle(static_cast<int>(screenPos.x), static_cast<int>(screenPos.y), 2, trailColor);
+        }
+    }
+    
+    // Draw missile body
+    Vector2 missileScreenPos = worldToScreen(missileState.position, r);
+    Color missileColor = (missileState.explosionTimer > 0.0f) ? RED : ORANGE;
+    
+    if (missileState.explosionTimer > 0.0f) {
+        // Draw explosion effect
+        float explosionRadius = 20.0f * (1.0f - missileState.explosionTimer / 0.4f); // 0.4f is EXPLOSION_DURATION
+        DrawCircle(static_cast<int>(missileScreenPos.x), static_cast<int>(missileScreenPos.y), 
+                  static_cast<int>(explosionRadius), Fade(RED, 0.8f));
+        DrawCircle(static_cast<int>(missileScreenPos.x), static_cast<int>(missileScreenPos.y), 
+                  static_cast<int>(explosionRadius * 0.6f), Fade(YELLOW, 0.9f));
+    } else {
+        // Draw active missile
+        DrawCircle(static_cast<int>(missileScreenPos.x), static_cast<int>(missileScreenPos.y), 4, missileColor);
+        DrawCircleLines(static_cast<int>(missileScreenPos.x), static_cast<int>(missileScreenPos.y), 6, WHITE);
+    }
 }
 
 void SonarDisplay::drawSubmarineIcon(Rectangle r) {

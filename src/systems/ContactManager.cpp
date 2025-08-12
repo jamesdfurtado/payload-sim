@@ -170,9 +170,10 @@ void ContactManager::updateMissile(float dt) {
     
     // Check if target still exists
     if (missileState.targetId != 0 && !hasContact(missileState.targetId)) {
-        // Target was destroyed, explode immediately
+        // Target was destroyed or went off-screen, self-destruct at current position
         missileState.explosionTimer = EXPLOSION_DURATION;
         missileState.targetValid = false;
+        // Keep current position for explosion effect
     }
     
     if (missileState.explosionTimer > 0.0f) {
@@ -192,6 +193,9 @@ void ContactManager::updateMissileFlight(float dt) {
         }
     } else {
         missileState.targetValid = false;
+        // If target is no longer valid, self-destruct at current position
+        missileState.explosionTimer = EXPLOSION_DURATION;
+        return;
     }
     
     // Calculate missile movement
