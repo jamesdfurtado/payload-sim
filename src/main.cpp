@@ -1,30 +1,28 @@
-#include <memory>
 #include <raylib.h>
-#include "ui/UiController.h"
-#include "simulation/SimulationEngine.h"
-#include "systems/ContactManager.h"
-#include "systems/SonarSystem.h"
-#include "systems/PowerSystem.h"
-#include "systems/DepthControl.h"
-#include "systems/TargetingSystem.h"
-#include "systems/SafetySystem.h"
-#include "systems/EnvironmentSystem.h"
+#include <memory>
+#include "sim/SimulationEngine.h"
+#include "sim/systems/PowerSystem.h"
+#include "sim/systems/DepthSystem.h"
+#include "sim/systems/SonarSystem.h"
+#include "sim/systems/TargetingSystem.h"
+#include "sim/systems/SafetySystem.h"
+#include "sim/systems/EnvironmentSystem.h"
+#include "sim/world/ContactManager.h"
+#include "ui/UIRoot.h"
 
 int main() {
     const int screenWidth = 1280;
     const int screenHeight = 720;
 
-    InitWindow(screenWidth, screenHeight, "Submarine Payload Launch Simulator");
+    InitWindow(screenWidth, screenHeight, "Submarine Payload Launch (New)");
     SetTargetFPS(60);
 
+    // Simulation core
     SimulationEngine engine;
-
-    // Create shared ContactManager instance
-    auto contactManager = std::make_shared<ContactManager>();
-    
+    auto contacts = std::make_shared<ContactManager>();
     auto power = std::make_shared<PowerSystem>();
-    auto depth = std::make_shared<DepthControl>();
-    auto sonar = std::make_shared<SonarSystem>(*contactManager);
+    auto depth = std::make_shared<DepthSystem>();
+    auto sonar = std::make_shared<SonarSystem>(*contacts);
     auto targeting = std::make_shared<TargetingSystem>();
     auto environment = std::make_shared<EnvironmentSystem>();
     auto safety = std::make_shared<SafetySystem>();
@@ -36,21 +34,25 @@ int main() {
     engine.registerSystem(environment);
     engine.registerSystem(safety);
 
-    UiController ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), safety.get(), environment.get(), contactManager.get());
+    // Ensure power turns off after safety reset completes
+    safety->setPowerOffCallback([power]{ power->setPowerLevel(0.0f); });
+
+    // UI root with direct pointers to systems/state
+    UIRoot ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), safety.get(), environment.get(), contacts.get());
 
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime();
-        
         engine.update(dt);
-
         ui.update(dt);
 
         BeginDrawing();
         ClearBackground(BLACK);
-        ui.render();
+        ui.draw();
         EndDrawing();
     }
 
     CloseWindow();
     return 0;
 }
+
+
