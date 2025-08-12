@@ -13,8 +13,8 @@
 #include "../sim/world/ContactManager.h"
 #include "ui/views/SonarView.h"
 #include "ui/views/StatusPanel.h"
-#include "ui/views/ControlsPanel.h"
 #include "ui/views/LogPanel.h"
+#include "ui/views/PowerView.h"
 
 class UIRoot {
 public:
@@ -30,15 +30,14 @@ public:
 
         sonarView = std::make_unique<SonarView>(*contacts);
         statusPanel = std::make_unique<StatusPanel>(engine);
-        controlsPanel = std::make_unique<ControlsPanel>(*safety, *power, *depth, *targeting);
+        powerView = std::make_unique<PowerView>(engine, *power);
         logPanel = std::make_unique<LogPanel>();
 
         // Simple layout (manual rects to keep lean)
         sonarView->setBounds({20, 120, 600, 580});
         statusPanel->setBounds({640, 20, 620, 110});
-        // depth and power are drawn inside controls panel
-        controlsPanel->setBounds({640, 140, 620, 420});
-        logPanel->setBounds({640, 580, 620, 120});
+        powerView->setBounds({640, 140, 620, 100});
+        logPanel->setBounds({640, 250, 620, 120});
 
         // Wire sonar selection to selecting a target in the sonar system
         sonarView->setOnSelect([this](Vector2 world){ this->sonar->attemptManualLock(world); });
@@ -71,17 +70,17 @@ public:
         // Simple mouse routing
         Vector2 mouse = GetMousePosition();
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if (controlsPanel->onMouseDown(mouse)) {} else if (sonarView->onMouseDown(mouse)) {}
+            if (powerView->onMouseDown(mouse)) {} else if (sonarView->onMouseDown(mouse)) {}
         }
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-            if (controlsPanel->onMouseUp(mouse)) {} else if (sonarView->onMouseUp(mouse)) {}
+            if (powerView->onMouseUp(mouse)) {} else if (sonarView->onMouseUp(mouse)) {}
         }
     }
 
     void draw() const {
         DrawText("Submarine Payload Launch Control Simulator", 20, 20, 24, RAYWHITE);
         statusPanel->draw();
-        controlsPanel->draw();
+        powerView->draw();
         sonarView->draw();
         logPanel->draw();
     }
@@ -97,7 +96,7 @@ private:
 
     std::unique_ptr<SonarView> sonarView;
     std::unique_ptr<StatusPanel> statusPanel;
-    std::unique_ptr<ControlsPanel> controlsPanel;
+    std::unique_ptr<PowerView> powerView;
     std::unique_ptr<LogPanel> logPanel;
 };
 
