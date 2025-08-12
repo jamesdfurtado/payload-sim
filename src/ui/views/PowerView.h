@@ -29,7 +29,7 @@ public:
         DrawText("Power", (int)bounds.x + 10, (int)bounds.y + 8, 20, SKYBLUE);
         
         // Draw battery status
-        int batteryPercent = (int)(s.powerLevel * 100.0f);
+        int batteryPercent = (int)power.getBatteryLevel();
         DrawText(TextFormat("Battery: %d%%", batteryPercent), 
                 (int)bounds.x + 10, (int)bounds.y + 40, 18, RAYWHITE);
         
@@ -37,7 +37,7 @@ public:
         DrawText("Weapons Power", (int)bounds.x + 10, (int)bounds.y + 64, 18, RAYWHITE);
         
         // Position and draw the switch
-        Rectangle switchRect = { bounds.x + 200, bounds.y + 10, 120, 40 };
+        Rectangle switchRect = { bounds.x + 200, bounds.y + 35, 120, 40 };
         weaponsSwitch->setBounds(switchRect);
         weaponsSwitch->draw();
         
