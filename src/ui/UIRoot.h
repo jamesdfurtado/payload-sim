@@ -13,7 +13,7 @@
 #include "../sim/world/ContactManager.h"
 #include "ui/views/SonarView.h"
 #include "ui/views/StatusPanel.h"
-#include "ui/views/LogPanel.h"
+
 #include "ui/views/PowerView.h"
 #include "ui/views/DepthView.h"
 
@@ -33,14 +33,14 @@ public:
         statusPanel = std::make_unique<StatusPanel>(engine);
         powerView = std::make_unique<PowerView>(engine, *power);
         depthView = std::make_unique<DepthView>(engine, *depth);
-        logPanel = std::make_unique<LogPanel>();
+
 
         // Simple layout (manual rects to keep lean)
         sonarView->setBounds({20, 120, 600, 580});
         statusPanel->setBounds({640, 20, 620, 110});
         powerView->setBounds({640, 140, 620, 100});
         depthView->setBounds({640, 250, 620, 100});
-        logPanel->setBounds({640, 370, 620, 120});
+
 
         // Wire sonar selection to selecting a target in the sonar system
         sonarView->setOnSelect([this](Vector2 world){ this->sonar->attemptManualLock(world); });
@@ -52,20 +52,19 @@ public:
         LaunchPhase current = safety->getPhase();
         if (current != previous) {
             switch (current) {
-                case LaunchPhase::Authorized: logPanel->add("Authorized"); break;
-                case LaunchPhase::Arming: logPanel->add("Arming..."); break;
-                case LaunchPhase::Armed: logPanel->add("Armed"); break;
+                case LaunchPhase::Authorized: break;
+                case LaunchPhase::Arming: break;
+                case LaunchPhase::Armed: break;
                 case LaunchPhase::Launching: {
-                    logPanel->add("Launching...");
                     // Trigger missile launch using currently selected target
                     uint32_t id = sonar->getSelectedTargetId();
                     if (id != 0) {
                         contacts->launchMissile(id, {0,0});
                     }
                     break; }
-                case LaunchPhase::Launched: logPanel->add("Launched!"); break;
-                case LaunchPhase::Resetting: logPanel->add("Resetting..."); break;
-                case LaunchPhase::Idle: logPanel->add("Idle"); break;
+                case LaunchPhase::Launched: break;
+                case LaunchPhase::Resetting: break;
+                case LaunchPhase::Idle: break;
             }
             previous = current;
         }
@@ -94,8 +93,8 @@ public:
         statusPanel->draw();
         powerView->draw();
         depthView->draw();
+
         sonarView->draw();
-        logPanel->draw();
     }
 
 private:
@@ -111,7 +110,7 @@ private:
     std::unique_ptr<StatusPanel> statusPanel;
     std::unique_ptr<PowerView> powerView;
     std::unique_ptr<DepthView> depthView;
-    std::unique_ptr<LogPanel> logPanel;
+
 };
 
 
