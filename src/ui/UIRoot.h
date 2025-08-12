@@ -69,7 +69,7 @@ public:
     }
 
     void draw() const {
-        DrawText("Submarine Payload Launch (New)", 20, 20, 24, RAYWHITE);
+        DrawText("Submarine Payload Launch Control Simulator", 20, 20, 24, RAYWHITE);
         statusPanel->draw();
         controlsPanel->draw();
         sonarView->draw();
