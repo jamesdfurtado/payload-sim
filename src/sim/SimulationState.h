@@ -14,10 +14,10 @@ struct SimulationState {
     // Derived flags
     bool canLaunchAuthorized = false;
 
-    // Example continuous state
-    float currentDepthMeters = 100.0f;
-    float powerLevel = 0.0f; // 0..1
-    float targetingStability = 0.5f; // 0..1
+    // Continuous state values managed by systems
+    float currentDepthMeters;    // Managed by DepthSystem
+    float powerLevel;            // Managed by PowerSystem (0.0-1.0 range)
+    float targetingStability;    // Managed by TargetingSystem (0.0-1.0 range)
 };
 
 
