@@ -39,6 +39,9 @@ public:
         // depth and power are drawn inside controls panel
         controlsPanel->setBounds({640, 140, 620, 420});
         logPanel->setBounds({640, 580, 620, 120});
+
+        // Wire sonar selection to selecting a target in the sonar system
+        sonarView->setOnSelect([this](Vector2 world){ this->sonar->attemptManualLock(world); });
     }
 
     void update(float /*dt*/) {
@@ -50,7 +53,14 @@ public:
                 case LaunchPhase::Authorized: logPanel->add("Authorized"); break;
                 case LaunchPhase::Arming: logPanel->add("Arming..."); break;
                 case LaunchPhase::Armed: logPanel->add("Armed"); break;
-                case LaunchPhase::Launching: logPanel->add("Launching..."); break;
+                case LaunchPhase::Launching: {
+                    logPanel->add("Launching...");
+                    // Trigger missile launch using currently selected target
+                    uint32_t id = sonar->getSelectedTargetId();
+                    if (id != 0) {
+                        contacts->launchMissile(id, {0,0});
+                    }
+                    break; }
                 case LaunchPhase::Launched: logPanel->add("Launched!"); break;
                 case LaunchPhase::Resetting: logPanel->add("Resetting..."); break;
                 case LaunchPhase::Idle: logPanel->add("Idle"); break;

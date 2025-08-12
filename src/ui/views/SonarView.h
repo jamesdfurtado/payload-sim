@@ -25,15 +25,17 @@ public:
         float nx = (pos.x - bounds.x) / bounds.width;
         float ny = (pos.y - bounds.y) / bounds.height;
         Vector2 world{ nx * 1200.0f - 600.0f, ny * 720.0f - 360.0f };
-        uint32_t targetId = contacts.getNearestContactId(world, 40.0f);
-        if (targetId != 0) {
-            contacts.launchMissile(targetId, {0,0});
-        }
+        // Selection will now be handled by SonarSystem via attemptManualLock
+        if (onSelect) onSelect(world);
         return true;
     }
 
+    // Allow the root to connect selection to the sonar system
+    void setOnSelect(std::function<void(Vector2)> fn) { onSelect = std::move(fn); }
+
 private:
     ContactManager& contacts;
+    std::function<void(Vector2)> onSelect;
 };
 
 

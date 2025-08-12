@@ -34,6 +34,10 @@ int main() {
     engine.registerSystem(environment);
     engine.registerSystem(safety);
 
+
+    // these need to be moved out of main.cpp at some point.
+    // Set a simple challenge code to allow authorization via the new UI
+    safety->setChallengeCode("1234");
     // Ensure power turns off after safety reset completes
     safety->setPowerOffCallback([power]{ power->setPowerLevel(0.0f); });
 

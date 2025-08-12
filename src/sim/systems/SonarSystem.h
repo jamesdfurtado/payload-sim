@@ -14,15 +14,26 @@ public:
         contactManager.updateSpawnTimer(dt);
         contactManager.spawnContactsIfNeeded();
         contactManager.updateMissile(dt);
-        state.targetAcquired = contactManager.getNearestContactId({0,0}) != 0; // simplistic
+
+        // Maintain a selected target if available; fall back to nearest
+        if (selectedTargetId != 0 && !contactManager.isContactAlive(selectedTargetId)) {
+            selectedTargetId = 0;
+        }
+        if (selectedTargetId == 0) {
+            selectedTargetId = contactManager.getNearestContactId({0,0});
+        }
+        state.targetAcquired = (selectedTargetId != 0);
     }
 
     void attemptManualLock(const Vector2& worldPos) {
-        (void)worldPos; // placeholder: could lock nearest contact
+        selectedTargetId = contactManager.getNearestContactId(worldPos, 40.0f);
     }
+
+    uint32_t getSelectedTargetId() const { return selectedTargetId; }
 
 private:
     ContactManager& contactManager;
+    uint32_t selectedTargetId = 0;
 };
 
 
