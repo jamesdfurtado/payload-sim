@@ -41,8 +41,8 @@ void LaunchSequencePanel::setupLayout() {
     buttonArea.width = buttonWidth;
     buttonArea.height = 4 * buttonHeight + 3 * margin;
     
-    // Position buttons vertically
-    float buttonY = buttonArea.y;
+    // Position buttons vertically (moved down a bit)
+    float buttonY = buttonArea.y + 30; // Add 30px offset to move buttons down
     authorizeButton->setBounds(Rectangle{buttonArea.x, buttonY, buttonWidth, buttonHeight});
     buttonY += buttonHeight + margin;
     
@@ -122,9 +122,6 @@ void LaunchSequencePanel::update(float dt) {
 }
 
 void LaunchSequencePanel::draw() const {
-    // Draw title
-    DrawText("LAUNCH SEQUENCE", bounds.x + 10, bounds.y + 10, 16, RAYWHITE);
-
     // Draw state buttons
     authorizeButton->draw();
     armButton->draw();

@@ -49,8 +49,11 @@ void ControlPanel::setupLayout() {
     authArea.height = 100;
     
     Rectangle keypadArea = rightPanelArea;
-    keypadArea.y = authArea.y + authArea.height + margin;
-    keypadArea.height = rightPanelArea.height - authArea.height - margin;
+    keypadArea.y = authArea.y + authArea.height + margin - 20; // Move keypad up by 20px
+    keypadArea.height = 160; // Fixed height for keypad
+    keypadArea.width = 120;  // Fixed width for keypad
+    // Center the keypad horizontally in the right panel
+    keypadArea.x = rightPanelArea.x + (rightPanelArea.width - keypadArea.width) / 2;
     
     authCodePanel->setBounds(authArea);
     keypadPanel->setBounds(keypadArea);

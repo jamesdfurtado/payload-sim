@@ -6,8 +6,8 @@ KeypadPanel::KeypadPanel(KeypadCallback onKeyPress, BackspaceCallback onBackspac
     // Create keypad
     createKeypad();
     
-    // Set initial bounds and layout
-    setBounds(Rectangle{0, 0, 150, 200});
+    // Set initial bounds and layout (smaller size)
+    setBounds(Rectangle{0, 0, 120, 160});
 }
 
 void KeypadPanel::setBounds(Rectangle newBounds) {
@@ -86,8 +86,8 @@ void KeypadPanel::update(float dt) {
 }
 
 void KeypadPanel::draw() const {
-    // Draw title
-    DrawText("KEYPAD", bounds.x + 10, bounds.y - 20, 16, RAYWHITE);
+    // Draw title (moved up a bit)
+    DrawText("KEYPAD", bounds.x + 10, bounds.y - 15, 16, RAYWHITE);
     
     // Draw keypad buttons
     for (const auto& button : keypadButtons) {
