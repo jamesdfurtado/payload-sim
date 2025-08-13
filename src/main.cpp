@@ -9,6 +9,7 @@
 #include "sim/systems/EnvironmentSystem.h"
 #include "sim/systems/TargetAcquisitionSystem.h"
 #include "sim/systems/TargetValidationSystem.h"
+#include "sim/systems/FriendlySafetySystem.h"
 
 #include "sim/world/ContactManager.h"
 #include "sim/world/CrosshairManager.h"
@@ -33,6 +34,7 @@ int main() {
     auto crosshairManager = std::make_shared<CrosshairManager>(*contacts);
     auto targetAcquisition = std::make_shared<TargetAcquisitionSystem>(*crosshairManager, *contacts);
     auto targetValidation = std::make_shared<TargetValidationSystem>(*crosshairManager, *contacts);
+    auto friendlySafety = std::make_shared<FriendlySafetySystem>(*crosshairManager, *contacts);
 
 
     engine.registerSystem(power);
@@ -43,6 +45,7 @@ int main() {
     engine.registerSystem(safety);
     engine.registerSystem(targetAcquisition);
     engine.registerSystem(targetValidation);
+    engine.registerSystem(friendlySafety);
 
 
 
