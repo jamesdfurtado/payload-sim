@@ -8,24 +8,9 @@ public:
     explicit SonarView(ContactManager& contacts) : contacts(contacts) {}
 
     void draw() const override {
-        // Draw panel, grid, crosshair, and submarine icon
-        drawSonar(bounds, contacts.getMissileState());
-        
-        // Note: Contact rendering is handled by ContactView, not here
+        // Draw panel, grid, and submarine icon
+        drawSonar(bounds);
     }
-
-    bool onMouseUp(Vector2 pos) override {
-        if (!contains(pos)) return false;
-        float nx = (pos.x - bounds.x) / bounds.width;
-        float ny = (pos.y - bounds.y) / bounds.height;
-        Vector2 world{ nx * 1200.0f - 600.0f, ny * 720.0f - 360.0f };
-        // Selection will now be handled by SonarSystem via attemptManualLock
-        if (onSelect) onSelect(world);
-        return true;
-    }
-
-    // Allow the root to connect selection to the sonar system
-    void setOnSelect(std::function<void(Vector2)> fn) { onSelect = std::move(fn); }
 
     // Get the current bounds for contact overlay rendering
     const Rectangle& getBounds() const { return bounds; }
@@ -38,13 +23,13 @@ private:
         return { r.x + nx * r.width, r.y + ny * r.height };
     }
 
-    void drawSonar(Rectangle r, const MissileState& /*missileState*/) const {
+    void drawSonar(Rectangle r) const {
         DrawRectangleRec(r, Fade(BLUE, 0.2f));
         DrawRectangleLinesEx(r, 1, SKYBLUE);
         DrawText("Sonar", (int)r.x + 10, (int)r.y + 8, 20, SKYBLUE);
 
         drawSonarGrid(r);
-        drawCrossHair(r);
+        drawDiagonalLines(r);
         drawSubmarineIcon(r);
     }
 
@@ -82,17 +67,15 @@ private:
         EndScissorMode();
     }
 
-    void drawCrossHair(Rectangle r) const {
-        Color gridColor = Fade(SKYBLUE, 0.15f);
-        Vector2 center = { r.x + r.width/2.0f, r.y + r.height/2.0f };
-        DrawLine(static_cast<int>(center.x), static_cast<int>(r.y), static_cast<int>(center.x), static_cast<int>(r.y + r.height), gridColor);
-        DrawLine(static_cast<int>(r.x), static_cast<int>(center.y), static_cast<int>(r.x + r.width), static_cast<int>(center.y), gridColor);
-        DrawLine(static_cast<int>(r.x), static_cast<int>(r.y), static_cast<int>(r.x + r.width), static_cast<int>(r.y + r.height), gridColor);
-        DrawLine(static_cast<int>(r.x + r.width), static_cast<int>(r.y), static_cast<int>(r.x), static_cast<int>(r.y + r.height), gridColor);
+    void drawDiagonalLines(Rectangle r) const {
+        Color lineColor = Fade(SKYBLUE, 0.15f);
+        
+        // Simple diagonal lines from corner to corner
+        DrawLineEx(Vector2{r.x, r.y}, Vector2{r.x + r.width, r.y + r.height}, 1, lineColor);
+        DrawLineEx(Vector2{r.x + r.width, r.y}, Vector2{r.x, r.y + r.height}, 1, lineColor);
     }
 
     ContactManager& contacts;
-    std::function<void(Vector2)> onSelect;
 };
 
 

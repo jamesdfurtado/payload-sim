@@ -43,9 +43,6 @@ public:
         powerView->setBounds({640, 140, 620, 100});
         depthView->setBounds({640, 250, 620, 100});
         controlPanel->setBounds({640, 360, 620, 340});
-
-        // Wire sonar selection to selecting a target in the sonar system
-        sonarView->setOnSelect([this](Vector2 world){ this->sonar->attemptManualLock(world); });
     }
 
     void update(float dt) {

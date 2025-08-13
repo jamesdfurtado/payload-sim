@@ -48,10 +48,10 @@ uint32_t ContactManager::spawnContact() {
     } else {
         // Heavier weight for enemies to increase engagement frequency
         float r = rand01();
-        if (r < 0.50f) c.type = ContactType::EnemySub;          // 50%
-        else if (r < 0.70f) c.type = ContactType::FriendlySub;  // next 20%
-        else if (r < 0.95f) c.type = ContactType::Fish;         // next 25%
-        else c.type = ContactType::Debris;                      // last 5%
+        if (r < 0.25f) c.type = ContactType::EnemySub;          // 25%
+        else if (r < 0.45f) c.type = ContactType::FriendlySub;  // next 20%
+        else if (r < 0.90f) c.type = ContactType::Fish;         // next 45%
+        else c.type = ContactType::Debris;                      // last 10%
     }
     
     activeContacts.push_back(c);
