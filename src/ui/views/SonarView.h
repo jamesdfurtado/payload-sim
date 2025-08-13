@@ -10,12 +10,8 @@ public:
     void draw() const override {
         // Draw panel, grid, crosshair, and submarine icon
         drawSonar(bounds, contacts.getMissileState());
-
-        // Draw contacts on top of the grid
-        for (const auto& contact : contacts.getActiveContacts()) {
-            Vector2 screen = worldToScreen(contact.position, bounds);
-            DrawCircle((int)screen.x, (int)screen.y, 4, (contact.type == ContactType::EnemySub) ? RED : SKYBLUE);
-        }
+        
+        // Note: Contact rendering is handled by ContactView, not here
     }
 
     bool onMouseUp(Vector2 pos) override {
@@ -30,6 +26,9 @@ public:
 
     // Allow the root to connect selection to the sonar system
     void setOnSelect(std::function<void(Vector2)> fn) { onSelect = std::move(fn); }
+
+    // Get the current bounds for contact overlay rendering
+    const Rectangle& getBounds() const { return bounds; }
 
 private:
     // Coordinate transform: world (-600..600, -360..360) to screen inside rectangle

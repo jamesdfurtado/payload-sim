@@ -5,6 +5,7 @@
 #include "../../sim/SimulationEngine.h"
 #include "../../sim/systems/PowerSystem.h"
 #include <memory>
+#include <string>
 
 class PowerView : public Widget {
 public:
@@ -30,7 +31,7 @@ public:
         
         // Draw battery status
         int batteryPercent = (int)power.getBatteryLevel();
-        DrawText(TextFormat("Battery: %d%%", batteryPercent), 
+        DrawText(("Battery: " + std::to_string(batteryPercent) + "%").c_str(), 
                 (int)bounds.x + 10, (int)bounds.y + 40, 18, RAYWHITE);
         
         // Draw weapons power label

@@ -5,6 +5,9 @@
 #include "../../sim/SimulationEngine.h"
 #include "../../sim/systems/DepthSystem.h"
 #include <memory>
+#include <string>
+#include <iomanip>
+#include <sstream>
 
 class DepthView : public Widget {
 public:
@@ -32,13 +35,15 @@ public:
         DrawText("Current:", (int)bounds.x + 10, (int)bounds.y + 40, 18, RAYWHITE);
         // Draw current depth value - red if outside range, green if within range
         Color currentDepthColor = s.depthClearanceMet ? GREEN : RED;
-        DrawText(TextFormat("%.1fm", s.currentDepthMeters),
+        std::string currentDepthStr = formatFloat(s.currentDepthMeters, 1) + "m";
+        DrawText(currentDepthStr.c_str(),
                  (int)bounds.x + 100, (int)bounds.y + 40, 18, currentDepthColor);
 
         // Draw optimal depth label
         DrawText("Optimal:", (int)bounds.x + 10, (int)bounds.y + 64, 18, RAYWHITE);
         // Draw optimal depth value in cyan (desired/target color)
-        DrawText(TextFormat("%.1fm", depth.getOptimalDepth()),
+        std::string optimalDepthStr = formatFloat(depth.getOptimalDepth(), 1) + "m";
+        DrawText(optimalDepthStr.c_str(),
                  (int)bounds.x + 100, (int)bounds.y + 64, 18, SKYBLUE);
         
         // Position and draw the throttle
@@ -58,7 +63,8 @@ public:
         
         float statusX = throttleX + throttleWidth + 200;
         DrawText(direction, (int)statusX, (int)bounds.y + 40, 18, RAYWHITE);
-        DrawText(TextFormat("Throttle: %.0f%%", (throttleValue - 0.5f) * 200.0f), 
+        std::string throttleStr = "Throttle: " + std::to_string((int)((throttleValue - 0.5f) * 200.0f)) + "%";
+        DrawText(throttleStr.c_str(), 
                 (int)statusX, (int)bounds.y + 65, 16, LIGHTGRAY);
     }
 
@@ -75,6 +81,12 @@ public:
     }
 
 private:
+    std::string formatFloat(float value, int precision) const {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(precision) << value;
+        return oss.str();
+    }
+
     SimulationEngine& engine;
     DepthSystem& depth;
     std::unique_ptr<Throttle> depthThrottle;
