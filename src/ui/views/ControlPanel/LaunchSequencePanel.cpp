@@ -55,65 +55,7 @@ void LaunchSequencePanel::setupLayout() {
     resetButton->setBounds(Rectangle{buttonArea.x, buttonY, buttonWidth, buttonHeight});
 }
 
-void LaunchSequencePanel::updateButtonStates() {
-    LaunchPhase currentPhase = safetySystem->getPhase();
-    
-    // Update button states based on current phase
-    switch (currentPhase) {
-        case LaunchPhase::Idle:
-            authorizeButton->setEnabled(true);
-            armButton->setEnabled(false);
-            launchButton->setEnabled(false);
-            resetButton->setEnabled(false);
-            break;
-            
-        case LaunchPhase::Authorized:
-            authorizeButton->setEnabled(false);
-            armButton->setEnabled(true);
-            launchButton->setEnabled(false);
-            resetButton->setEnabled(true);
-            break;
-            
-        case LaunchPhase::Arming:
-            authorizeButton->setEnabled(false);
-            armButton->setEnabled(false);
-            launchButton->setEnabled(false);
-            resetButton->setEnabled(true);
-            break;
-            
-        case LaunchPhase::Armed:
-            authorizeButton->setEnabled(false);
-            armButton->setEnabled(false);
-            launchButton->setEnabled(true);
-            resetButton->setEnabled(true);
-            break;
-            
-        case LaunchPhase::Launching:
-            authorizeButton->setEnabled(false);
-            armButton->setEnabled(false);
-            launchButton->setEnabled(false);
-            resetButton->setEnabled(false);
-            break;
-            
-        case LaunchPhase::Launched:
-            authorizeButton->setEnabled(false);
-            armButton->setEnabled(false);
-            launchButton->setEnabled(false);
-            resetButton->setEnabled(true);
-            break;
-            
-        case LaunchPhase::Resetting:
-            authorizeButton->setEnabled(false);
-            armButton->setEnabled(false);
-            launchButton->setEnabled(false);
-            resetButton->setEnabled(false);
-            break;
-    }
-}
-
 void LaunchSequencePanel::update(float dt) {
-    updateButtonStates();
-    
     // Update all buttons
     authorizeButton->update(dt);
     armButton->update(dt);
@@ -147,7 +89,7 @@ bool LaunchSequencePanel::onMouseUp(Vector2 mousePos) {
 
 bool LaunchSequencePanel::onMouseMove(Vector2 mousePos) {
     if (authorizeButton->onMouseMove(mousePos)) return true;
-    if (armButton->onMouseMove(mousePos)) return true;
+    if (armButton->onMouseDown(mousePos)) return true;
     if (launchButton->onMouseMove(mousePos)) return true;
     if (resetButton->onMouseMove(mousePos)) return true;
     return false;
@@ -160,13 +102,13 @@ void LaunchSequencePanel::onAuthorize() {
 }
 
 void LaunchSequencePanel::onArm() {
-    safetySystem->arm();
+    // Removed business logic
 }
 
 void LaunchSequencePanel::onLaunch() {
-    safetySystem->launch();
+    // Removed business logic
 }
 
 void LaunchSequencePanel::onReset() {
-    safetySystem->reset();
+    // Removed business logic
 }
