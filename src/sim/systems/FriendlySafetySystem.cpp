@@ -22,6 +22,15 @@ void FriendlySafetySystem::update(SimulationState& state, float dt) {
 bool FriendlySafetySystem::checkFriendlyUnitsInBlastRadius(Vector2 blastCenter) const {
     const std::vector<SonarContact>& contacts = contactManager.getActiveContacts();
     
+    // First check if our own submarine (at center) is in blast radius
+    float dx = 0.0f - blastCenter.x;
+    float dy = 0.0f - blastCenter.y;
+    float distanceToCenter = std::sqrt(dx * dx + dy * dy);
+    if (distanceToCenter <= BLAST_RADIUS) {
+        return true; // Our own submarine is in blast radius
+    }
+    
+    // Then check other friendly submarines
     for (const auto& contact : contacts) {
         // Only check friendly submarines
         if (contact.type == ContactType::FriendlySub && contact.isVisible) {
