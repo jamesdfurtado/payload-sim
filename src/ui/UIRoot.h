@@ -13,6 +13,7 @@
 #include "../sim/world/ContactManager.h"
 #include "ui/views/SonarView.h"
 #include "ui/views/StatusPanel.h"
+#include "ui/views/ControlPanel.h"
 
 #include "ui/views/PowerView.h"
 #include "ui/views/DepthView.h"
@@ -33,12 +34,15 @@ public:
         statusPanel = std::make_unique<StatusPanel>(engine);
         powerView = std::make_unique<PowerView>(engine, *power);
         depthView = std::make_unique<DepthView>(engine, *depth);
+        controlPanel = std::make_unique<ControlPanel>(safety);
+
 
         // Simple layout (manual rects to keep lean)
         sonarView->setBounds({20, 120, 600, 580});
         statusPanel->setBounds({640, 20, 620, 110});
         powerView->setBounds({640, 140, 620, 100});
         depthView->setBounds({640, 250, 620, 100});
+        controlPanel->setBounds({640, 360, 620, 340});
 
 
         // Wire sonar selection to selecting a target in the sonar system
@@ -71,19 +75,20 @@ public:
         // Update all views
         powerView->update(dt);
         depthView->update(dt);
+        controlPanel->update(dt);
 
         // Simple mouse routing
         Vector2 mouse = GetMousePosition();
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if (powerView->onMouseDown(mouse)) {} else if (depthView->onMouseDown(mouse)) {} else if (sonarView->onMouseDown(mouse)) {}
+            if (powerView->onMouseDown(mouse)) {} else if (depthView->onMouseDown(mouse)) {} else if (sonarView->onMouseDown(mouse)) {} else if (controlPanel->onMouseDown(mouse)) {}
         }
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-            if (powerView->onMouseUp(mouse)) {} else if (depthView->onMouseUp(mouse)) {} else if (sonarView->onMouseUp(mouse)) {}
+            if (powerView->onMouseUp(mouse)) {} else if (depthView->onMouseUp(mouse)) {} else if (sonarView->onMouseUp(mouse)) {} else if (controlPanel->onMouseUp(mouse)) {}
         }
         
         // Handle mouse movement for dragging
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-            if (powerView->onMouseMove(mouse)) {} else if (depthView->onMouseMove(mouse)) {} else if (sonarView->onMouseMove(mouse)) {}
+            if (powerView->onMouseMove(mouse)) {} else if (depthView->onMouseMove(mouse)) {} else if (sonarView->onMouseMove(mouse)) {} else if (controlPanel->onMouseMove(mouse)) {}
         }
     }
 
@@ -92,6 +97,7 @@ public:
         statusPanel->draw();
         powerView->draw();
         depthView->draw();
+        controlPanel->draw();
 
         sonarView->draw();
     }
@@ -109,6 +115,7 @@ private:
     std::unique_ptr<StatusPanel> statusPanel;
     std::unique_ptr<PowerView> powerView;
     std::unique_ptr<DepthView> depthView;
+    std::unique_ptr<ControlPanel> controlPanel;
 
 };
 

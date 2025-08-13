@@ -7,13 +7,13 @@
 class InputBox : public Widget {
 public:
     struct InputBoxStyle {
-        Color backgroundColor = Color{20, 20, 20, 255};  // Dark background
-        Color borderColor = GREEN;                       // Green glowing border
-        Color textColor = Color{0, 255, 255, 255};      // Cyan text
-        Color placeholderColor = GRAY;                   // Gray for empty slots
+        Color backgroundColor = {20, 20, 20, 255};  // Dark background
+        Color borderColor = GREEN;                   // Green glowing border
+        Color textColor = {0, 255, 255, 255};      // Cyan text
+        Color placeholderColor = GRAY;               // Gray for placeholder
         int borderThickness = 3;
         int textSize = 24;
-        int digitSpacing = 8;                           // Space between digits
+        int digitSpacing = 8;                       // Space between digits
         bool showBorder = true;
         bool showPlaceholder = true;
     };
@@ -52,6 +52,12 @@ public:
     int getMaxDigits() const { return maxDigits; }
     int getCurrentLength() const { return currentInput.length(); }
 
+    // Update method
+    void update(float dt) {
+        // InputBox state updates can go here if needed
+        // For now, this is a placeholder for consistency with other widgets
+    }
+
     // Style customization
     void setStyle(const InputBoxStyle& newStyle) { style = newStyle; }
     void setBorderColor(Color color) { style.borderColor = color; }
@@ -79,7 +85,11 @@ public:
             float digitX = startX + i * (digitWidth + style.digitSpacing);
             float digitY = bounds.y + (bounds.height - style.textSize) / 2;
             
-            Rectangle digitRect = {digitX, digitY, digitWidth, (float)style.textSize};
+            Rectangle digitRect;
+            digitRect.x = digitX;
+            digitRect.y = digitY;
+            digitRect.width = digitWidth;
+            digitRect.height = (float)style.textSize;
             
             // Draw digit background (optional - can be removed for cleaner look)
             // DrawRectangleRec(digitRect, Color{30, 30, 30, 255});

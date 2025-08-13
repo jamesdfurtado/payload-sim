@@ -77,6 +77,12 @@ public:
     bool isCompleted() const { return completed; }
     const std::string& getLabel() const { return label; }
 
+    // Update method
+    void update(float dt) {
+        // Button state updates can go here if needed
+        // For now, this is a placeholder for consistency with other widgets
+    }
+
     void draw() const override {
         if (!enabled) {
             // Draw disabled state
