@@ -79,8 +79,8 @@ void ControlPanel::setupLayout() {
     // Right side: Keypad area (below auth)
     keypadArea.x = bounds.x + leftWidth + centerGap + margin;
     keypadArea.y = authArea.y + authArea.height + margin - 10; // Move up 10px
-    keypadArea.width = (rightWidth * 0.8f) * 0.5f; // Make keypad half size (50% of 80% of right width)
-    keypadArea.height = (bounds.height - (authArea.y + authArea.height + margin) - margin) * 0.5f; // Half height too
+    keypadArea.width = (rightWidth * 0.8f) * 0.8f; // Increase keypad size from 50% to 80% of available width
+    keypadArea.height = (bounds.height - (authArea.y + authArea.height + margin) - margin) * 0.8f; // Increase height from 50% to 80% too
     
     // Position state buttons (left side, vertical stack)
     float buttonY = buttonArea.y;
@@ -101,20 +101,22 @@ void ControlPanel::setupLayout() {
     authCodeDisplay->setBounds(Rectangle{authArea.x + rightWidth / 2 + margin / 2, authY, rightWidth / 2 - margin / 2, 30});
     
     // Position keypad buttons (3x3 grid, right side, centered)
-    float keypadButtonSize = (keypadArea.width - 2 * margin) / 3;
-    float keypadX = keypadArea.x + (keypadArea.width - (3 * keypadButtonSize + 2 * margin)) / 2; // Center horizontally
+    // Make buttons larger and reduce spacing between them
+    float keypadMargin = margin * 0.5f; // Reduce margin between buttons to half
+    float keypadButtonSize = (keypadArea.width - 2 * keypadMargin) / 3;
+    float keypadX = keypadArea.x + (keypadArea.width - (3 * keypadButtonSize + 2 * keypadMargin)) / 2; // Center horizontally
     float keypadY = keypadArea.y;
     
     for (size_t i = 0; i < keypadButtons.size(); ++i) {
         if (i % 3 == 0 && i > 0) {
             keypadX = keypadArea.x;
-            keypadY += keypadButtonSize + margin;
+            keypadY += keypadButtonSize + keypadMargin;
         }
         
         // Special positioning for backspace button (bottom right)
         if (i == 10) { // Backspace button
             keypadButtons[i]->setBounds(Rectangle{
-                keypadArea.x + 2 * (keypadButtonSize + margin),
+                keypadArea.x + 2 * (keypadButtonSize + keypadMargin),
                 keypadY,
                 keypadButtonSize,
                 keypadButtonSize
@@ -126,7 +128,7 @@ void ControlPanel::setupLayout() {
                 keypadButtonSize,
                 keypadButtonSize
             });
-            keypadX += keypadButtonSize + margin;
+            keypadX += keypadButtonSize + keypadMargin;
         }
     }
 }
