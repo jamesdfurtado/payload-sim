@@ -2,6 +2,11 @@
 #include <cmath>
 #include <algorithm>
 #include <random>
+#include <raylib.h>
+
+#ifndef PI
+#define PI 3.14159265359f
+#endif
 
 static float rand01() {
     static std::mt19937 rng{std::random_device{}()};
@@ -10,16 +15,45 @@ static float rand01() {
 }
 
 ContactManager::ContactManager() {
-    spawnTimer = 1.0f;
+    spawnTimer = 1.5f;
 }
 
 uint32_t ContactManager::spawnContact() {
     SonarContact c{};
     c.id = nextContactId++;
-    c.position = { rand01() * 1200.0f - 600.0f, rand01() * 720.0f - 360.0f };
-    c.velocityDirRad = rand01() * 6.2831853f;
-    c.speed = 20.0f + rand01() * 60.0f;
-    c.type = ContactType::EnemySub;
+    
+    // Reset counter every 128 contacts to prevent overflow
+    if (nextContactId > 128) {
+        nextContactId = 1;
+    }
+    
+    // Random position within bounds
+    c.position = { (float)GetRandomValue(-500, 500), (float)GetRandomValue(-300, 300) };
+    
+    // Random direction and speed
+    c.velocityDirRad = rand01() * 2.0f * PI;
+    c.speed = 10.0f + rand01() * 20.0f;  // Speed range: 10-30 units
+    
+    // Bias spawn toward enemies and ensure there is always at least one enemy
+    bool hasEnemyAlready = false;
+    for (const auto& existing : activeContacts) {
+        if (existing.type == ContactType::EnemySub) {
+            hasEnemyAlready = true;
+            break;
+        }
+    }
+
+    if (!hasEnemyAlready) {
+        c.type = ContactType::EnemySub;
+    } else {
+        // Heavier weight for enemies to increase engagement frequency
+        float r = rand01();
+        if (r < 0.50f) c.type = ContactType::EnemySub;          // 50%
+        else if (r < 0.70f) c.type = ContactType::FriendlySub;  // next 20%
+        else if (r < 0.95f) c.type = ContactType::Fish;         // next 25%
+        else c.type = ContactType::Debris;                      // last 5%
+    }
+    
     activeContacts.push_back(c);
     return c.id;
 }
@@ -47,23 +81,47 @@ bool ContactManager::isContactAlive(uint32_t id) const {
 }
 
 void ContactManager::updateContactPositions(float dt) {
-    for (auto& c : activeContacts) {
-        c.position.x += std::cos(c.velocityDirRad) * c.speed * dt;
-        c.position.y += std::sin(c.velocityDirRad) * c.speed * dt;
-        // wrap
-        if (c.position.x < -620) c.position.x = 620;
-        if (c.position.x > 620) c.position.x = -620;
-        if (c.position.y < -380) c.position.y = 380;
-        if (c.position.y > 380) c.position.y = -380;
+    for (auto& contact : activeContacts) {
+        contact.position.x += cosf(contact.velocityDirRad) * contact.speed * dt;
+        contact.position.y += sinf(contact.velocityDirRad) * contact.speed * dt;
     }
 }
 
-void ContactManager::updateSpawnTimer(float dt) { spawnTimer -= dt; }
+void ContactManager::updateSpawnTimer(float dt) { 
+    spawnTimer -= dt; 
+}
 
 void ContactManager::spawnContactsIfNeeded() {
-    if (spawnTimer <= 0.0f) {
+    // Ensure board is populated at all times
+    while (activeContacts.size() < 10) {
         spawnContact();
-        spawnTimer = 2.0f;
+    }
+    
+    // If there are no enemies on the board, force-spawn one (up to the cap)
+    {
+        bool enemyPresent = false;
+        for (const auto& c : activeContacts) {
+            if (c.type == ContactType::EnemySub) { enemyPresent = true; break; }
+        }
+        if (!enemyPresent && activeContacts.size() < 20) {
+            spawnContact();
+        }
+    }
+
+    if (spawnTimer <= 0.0f && activeContacts.size() < 20) {
+        spawnContact();
+        spawnTimer = 1.5f + ((float)GetRandomValue(0, 10000) / 10000.0f) * 2.0f;
+    }
+}
+
+void ContactManager::removeOutOfBoundsContacts() {
+    for (auto it = activeContacts.begin(); it != activeContacts.end(); ) {
+        if (it->position.x < -600 || it->position.x > 600 || 
+            it->position.y < -360 || it->position.y > 360) {
+            it = activeContacts.erase(it);
+        } else {
+            ++it;
+        }
     }
 }
 
@@ -97,6 +155,38 @@ void ContactManager::updateMissile(float dt) {
     }
     missileState.position.x += (dx/len) * speed * dt;
     missileState.position.y += (dy/len) * speed * dt;
+}
+
+size_t ContactManager::getEnemyCount() const {
+    size_t count = 0;
+    for (const auto& c : activeContacts) {
+        if (c.type == ContactType::EnemySub) count++;
+    }
+    return count;
+}
+
+size_t ContactManager::getFriendlyCount() const {
+    size_t count = 0;
+    for (const auto& c : activeContacts) {
+        if (c.type == ContactType::FriendlySub) count++;
+    }
+    return count;
+}
+
+size_t ContactManager::getFishCount() const {
+    size_t count = 0;
+    for (const auto& c : activeContacts) {
+        if (c.type == ContactType::Fish) count++;
+    }
+    return count;
+}
+
+size_t ContactManager::getDebrisCount() const {
+    size_t count = 0;
+    for (const auto& c : activeContacts) {
+        if (c.type == ContactType::Debris) count++;
+    }
+    return count;
 }
 
 

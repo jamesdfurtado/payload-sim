@@ -7,12 +7,12 @@
 enum class ContactType { EnemySub, FriendlySub, Fish, Debris };
 
 struct SonarContact {
-    uint32_t id;
-    Vector2 position;
-    float velocityDirRad;
-    float speed;
-    ContactType type;
-    bool isVisible = true;
+    uint32_t id;                    // Unique identifier (never changes)
+    Vector2 position;               // Current position
+    float velocityDirRad;           // Direction of movement
+    float speed;                    // Speed of movement
+    ContactType type;               // Type of contact
+    bool isVisible = true;          // Visibility flag
 };
 
 struct MissileState {
@@ -42,11 +42,19 @@ public:
     void updateContactPositions(float dt);
     void updateSpawnTimer(float dt);
     void spawnContactsIfNeeded();
+    void removeOutOfBoundsContacts();
 
     // Missile
     void launchMissile(uint32_t targetId, const Vector2& launchPosition);
     void updateMissile(float dt);
     const MissileState& getMissileState() const { return missileState; }
+
+    // Contact statistics
+    size_t getContactCount() const { return activeContacts.size(); }
+    size_t getEnemyCount() const;
+    size_t getFriendlyCount() const;
+    size_t getFishCount() const;
+    size_t getDebrisCount() const;
 
 private:
     std::vector<SonarContact> activeContacts;
