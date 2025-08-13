@@ -1,7 +1,7 @@
 #include "LaunchSequencePanel.h"
 
-LaunchSequencePanel::LaunchSequencePanel(SafetySystem* safetySystem, AuthorizeCallback onAuthorize) 
-    : safetySystem(safetySystem), authorizeCallback(onAuthorize) {
+LaunchSequencePanel::LaunchSequencePanel(AuthorizeCallback onAuthorize) 
+    : authorizeCallback(onAuthorize) {
     
     // Create state buttons with appropriate colors
     authorizeButton = std::make_unique<Button>("AUTHORIZE LAUNCH", [this]() { 
@@ -89,7 +89,7 @@ bool LaunchSequencePanel::onMouseUp(Vector2 mousePos) {
 
 bool LaunchSequencePanel::onMouseMove(Vector2 mousePos) {
     if (authorizeButton->onMouseMove(mousePos)) return true;
-    if (armButton->onMouseDown(mousePos)) return true;
+    if (armButton->onMouseMove(mousePos)) return true;
     if (launchButton->onMouseMove(mousePos)) return true;
     if (resetButton->onMouseMove(mousePos)) return true;
     return false;

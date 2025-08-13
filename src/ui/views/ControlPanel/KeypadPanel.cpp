@@ -63,7 +63,9 @@ void KeypadPanel::createKeypad() {
     for (char key : keys) {
         // Number button
         auto numBtn = std::make_unique<Button>(key, [this, key](char pressedKey) { 
-            keypadCallback(pressedKey); 
+            if (keypadCallback) {
+                keypadCallback(pressedKey); 
+            }
         });
         numBtn->setColors(DARKGRAY, WHITE, WHITE);
         keypadButtons.push_back(std::move(numBtn));
@@ -71,7 +73,9 @@ void KeypadPanel::createKeypad() {
     
     // Create backspace button separately
     auto backspaceBtn = std::make_unique<Button>("<", [this]() { 
-        backspaceCallback(); 
+        if (backspaceCallback) {
+            backspaceCallback(); 
+        }
     });
     backspaceBtn->setColors(RED, RED, WHITE);
     backspaceBtn->setTextSize(16);

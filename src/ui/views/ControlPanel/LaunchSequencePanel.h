@@ -2,7 +2,6 @@
 
 #include "../../Widget.h"
 #include "../../widgets/Button.h"
-#include "../../../sim/systems/SafetySystem.h"
 #include <memory>
 #include <functional>
 #include <raylib.h>
@@ -11,7 +10,7 @@ class LaunchSequencePanel : public Widget {
 public:
     using AuthorizeCallback = std::function<void()>;
     
-    explicit LaunchSequencePanel(SafetySystem* safetySystem, AuthorizeCallback onAuthorize = nullptr);
+    explicit LaunchSequencePanel(AuthorizeCallback onAuthorize = nullptr);
 
     // Widget interface
     void draw() const override;
@@ -24,7 +23,6 @@ public:
     void setBounds(Rectangle newBounds);
 
 private:
-    SafetySystem* safetySystem;
     AuthorizeCallback authorizeCallback;
     
     // State buttons
@@ -38,7 +36,6 @@ private:
     
     // Helper methods
     void setupLayout();
-    void updateButtonStates();
     
     // Button callbacks
     void onAuthorize();

@@ -74,14 +74,9 @@ std::string AuthCodePanel::getInputValue() const {
 
 void AuthCodePanel::handleAuthCodeSubmit() {
     currentAuthCode = authCodeInput->getValue();
-    if (currentAuthCode == "1511") {
-        authCodeEntered = true;
-        authCodeInput->setBorderColor(GREEN);
-        // Submit to callback
+    // Removed validation logic - just call callback
+    if (authCodeCallback) {
         authCodeCallback(currentAuthCode);
-    } else {
-        authCodeInput->setBorderColor(RED);
-        authCodeInput->clear();
     }
 }
 

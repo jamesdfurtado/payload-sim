@@ -4,7 +4,7 @@ ControlPanel::ControlPanel(SafetySystem* safetySystem)
     : safetySystem(safetySystem), authCodeEntered(false) {
     
     // Create sub-panels
-    launchSequencePanel = std::make_unique<LaunchSequencePanel>(safetySystem, [this]() { onAuthorize(); });
+    launchSequencePanel = std::make_unique<LaunchSequencePanel>([this]() { onAuthorize(); });
     keypadPanel = std::make_unique<KeypadPanel>(
         [this](char key) { authCodePanel->handleKeypadInput(key); },
         [this]() { authCodePanel->handleBackspace(); }
