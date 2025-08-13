@@ -59,11 +59,7 @@ public:
                 case LaunchPhase::Arming: break;
                 case LaunchPhase::Armed: break;
                 case LaunchPhase::Launching: {
-                    // Trigger missile launch using currently selected target
-                    uint32_t id = sonar->getSelectedTargetId();
-                    if (id != 0) {
-                        contacts->launchMissile(id, {0,0});
-                    }
+                    
                     break; }
                 case LaunchPhase::Launched: break;
                 case LaunchPhase::Resetting: break;
