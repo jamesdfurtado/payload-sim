@@ -114,6 +114,8 @@ public:
         
         // Finally overlay crosshair and selection circle
         crosshairView->drawOnSonar(sonarView->getBounds());
+        
+
     }
 
 private:

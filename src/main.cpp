@@ -8,6 +8,8 @@
 #include "sim/systems/SafetySystem.h"
 #include "sim/systems/EnvironmentSystem.h"
 #include "sim/systems/TargetAcquisitionSystem.h"
+#include "sim/systems/TargetValidationSystem.h"
+
 #include "sim/world/ContactManager.h"
 #include "sim/world/CrosshairManager.h"
 #include "ui/UIRoot.h"
@@ -30,6 +32,8 @@ int main() {
     auto safety = std::make_shared<SafetySystem>();
     auto crosshairManager = std::make_shared<CrosshairManager>(*contacts);
     auto targetAcquisition = std::make_shared<TargetAcquisitionSystem>(*crosshairManager, *contacts);
+    auto targetValidation = std::make_shared<TargetValidationSystem>(*crosshairManager, *contacts);
+
 
     engine.registerSystem(power);
     engine.registerSystem(depth);
@@ -38,6 +42,8 @@ int main() {
     engine.registerSystem(environment);
     engine.registerSystem(safety);
     engine.registerSystem(targetAcquisition);
+    engine.registerSystem(targetValidation);
+
 
 
     // these need to be moved out of main.cpp at some point.

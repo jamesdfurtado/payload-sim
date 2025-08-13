@@ -8,7 +8,7 @@ struct SimulationState {
     bool launchTubeIntegrity = true;
     bool payloadSystemOperational = false;
     bool powerSupplyStable = false;
-    bool noFriendlyUnitsInBlastRadius = true;
+    bool noFriendlyUnitsInBlastRadius = false;
     bool launchConditionsFavorable = true;
 
     // Derived flags

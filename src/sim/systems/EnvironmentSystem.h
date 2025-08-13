@@ -9,7 +9,7 @@ public:
         // Keep it simple for now
         state.launchConditionsFavorable = true;
         state.launchTubeIntegrity = true;
-        state.noFriendlyUnitsInBlastRadius = true;
+
     }
 };
 
