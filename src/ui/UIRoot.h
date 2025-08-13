@@ -34,7 +34,6 @@ public:
         powerView = std::make_unique<PowerView>(engine, *power);
         depthView = std::make_unique<DepthView>(engine, *depth);
 
-
         // Simple layout (manual rects to keep lean)
         sonarView->setBounds({20, 120, 600, 580});
         statusPanel->setBounds({640, 20, 620, 110});
