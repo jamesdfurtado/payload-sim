@@ -14,7 +14,7 @@
 #include "ui/views/SonarView.h"
 #include "ui/views/StatusPanel.h"
 #include "ui/views/ControlPanel.h"
-
+#include "ui/views/ContactView.h"
 #include "ui/views/PowerView.h"
 #include "ui/views/DepthView.h"
 
@@ -35,7 +35,7 @@ public:
         powerView = std::make_unique<PowerView>(engine, *power);
         depthView = std::make_unique<DepthView>(engine, *depth);
         controlPanel = std::make_unique<ControlPanel>(safety);
-
+        contactView = std::make_unique<ContactView>(*contacts);
 
         // Simple layout (manual rects to keep lean)
         sonarView->setBounds({20, 120, 600, 580});
@@ -43,7 +43,6 @@ public:
         powerView->setBounds({640, 140, 620, 100});
         depthView->setBounds({640, 250, 620, 100});
         controlPanel->setBounds({640, 360, 620, 340});
-
 
         // Wire sonar selection to selecting a target in the sonar system
         sonarView->setOnSelect([this](Vector2 world){ this->sonar->attemptManualLock(world); });
@@ -99,7 +98,11 @@ public:
         depthView->draw();
         controlPanel->draw();
 
+        // Draw sonar view first (background, grid, crosshair, submarine)
         sonarView->draw();
+        
+        // Then overlay contacts on top of the sonar display
+        contactView->drawContactsOnSonar(sonarView->getBounds());
     }
 
 private:
@@ -116,6 +119,7 @@ private:
     std::unique_ptr<PowerView> powerView;
     std::unique_ptr<DepthView> depthView;
     std::unique_ptr<ControlPanel> controlPanel;
+    std::unique_ptr<ContactView> contactView;
 
 };
 
