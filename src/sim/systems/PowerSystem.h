@@ -9,7 +9,7 @@ public:
     void update(SimulationState& state, float dt) override {
         // Update battery level based on power switch state
         if (desiredPower > 0.5f) {
-            // Power is ON - drain battery
+            // Power is ON - drain battery (reduced drain rate for better efficiency)
             batteryLevel -= batteryDrainRate * dt;
             if (batteryLevel < 0.0f) batteryLevel = 0.0f;
         } else {
@@ -24,6 +24,7 @@ public:
     }
 
     void setPowerLevel(float level) { desiredPower = level; }
+    void setPowerState(bool isOn) { desiredPower = isOn ? 1.0f : 0.0f; }
     float getPowerLevel() const { return desiredPower; }
     float getBatteryLevel() const { return batteryLevel; }
 
@@ -32,7 +33,7 @@ private:
     float batteryLevel = 100.0f; // Battery percentage (0.0f - 100.0f)
     
     // Battery drain/charge rates (percentage per second)
-    const float batteryDrainRate = 20.0f;  // 20% per second when power is ON
+    const float batteryDrainRate = 8.0f;   // Reduced from 20% to 8% per second when power is ON
     const float batteryChargeRate = 15.0f; // 15% per second when power is OFF
 };
 

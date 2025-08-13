@@ -41,7 +41,24 @@ public:
     float getDepth() const { return desiredDepth; }
     
     void setDepthChange(float change) { depthChange = std::clamp(change, -1.0f, 1.0f); }
+    void setThrottleValue(float throttleValue) { 
+        // Convert throttle value (0.0f = DOWN, 0.5f = NEUTRAL, 1.0f = UP) to depth change
+        // -0.5f to 0.5f (halved sensitivity)
+        float depthChange = (throttleValue - 0.5f) * 1.0f;
+        setDepthChange(depthChange);
+    }
     float getOptimalDepth() const { return optimalDepth; }
+    
+    const char* getMovementStatus() const {
+        if (depthChange > 0.05f) return "ASCENDING";
+        else if (depthChange < -0.05f) return "DESCENDING";
+        else return "HOLDING";
+    }
+    
+    float getThrottlePercentage() const {
+        // Convert depth change back to throttle percentage for display
+        return (depthChange + 0.5f) * 100.0f;
+    }
 
 private:
     float desiredDepth;         // Initial spawn depth (randomly set relative to optimal depth)

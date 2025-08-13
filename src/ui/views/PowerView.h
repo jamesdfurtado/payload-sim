@@ -14,9 +14,8 @@ public:
         
         // Create the weapons power switch
         weaponsSwitch = std::make_unique<Switch>(false, [this](bool state) {
-            // Convert boolean to power level (0.0f = OFF, 1.0f = ON)
-            float powerLevel = state ? 1.0f : 0.0f;
-            this->power.setPowerLevel(powerLevel);
+            // Delegate power state management to PowerSystem
+            this->power.setPowerState(state);
         });
     }
 

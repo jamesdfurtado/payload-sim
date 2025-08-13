@@ -16,9 +16,8 @@ public:
         
         // Create the depth throttle
         depthThrottle = std::make_unique<Throttle>([this](float value) {
-            // Convert throttle value (0.0f = DOWN, 0.5f = NEUTRAL, 1.0f = UP) to depth change
-            float depthChange = (value - 0.5f) * 1.0f; // -0.5f to 0.5f (halved sensitivity)
-            this->depth.setDepthChange(depthChange);
+            // Delegate throttle processing to DepthSystem
+            this->depth.setThrottleValue(value);
         });
     }
 
@@ -55,15 +54,11 @@ public:
         depthThrottle->draw();
         
         // Draw status and throttle value (positioned to the right of the throttle, moved 100px right)
-        const char* direction = "";
-        float throttleValue = depthThrottle->getValue();
-        if (throttleValue > 0.55f) direction = "ASCENDING";
-        else if (throttleValue < 0.45f) direction = "DESCENDING";
-        else direction = "HOLDING";
+        const char* direction = depth.getMovementStatus();
         
         float statusX = throttleX + throttleWidth + 200;
         DrawText(direction, (int)statusX, (int)bounds.y + 40, 18, RAYWHITE);
-        std::string throttleStr = "Throttle: " + std::to_string((int)((throttleValue - 0.5f) * 200.0f)) + "%";
+        std::string throttleStr = "Throttle: " + std::to_string((int)depth.getThrottlePercentage()) + "%";
         DrawText(throttleStr.c_str(), 
                 (int)statusX, (int)bounds.y + 65, 16, LIGHTGRAY);
     }
