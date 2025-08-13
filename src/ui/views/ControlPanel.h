@@ -1,12 +1,11 @@
 #pragma once
 
 #include "../Widget.h"
-#include "../widgets/Button.h"
-#include "../widgets/InputBox.h"
+#include "ControlPanel/LaunchSequencePanel.h"
+#include "ControlPanel/KeypadPanel.h"
+#include "ControlPanel/AuthCodePanel.h"
 #include "../../sim/systems/SafetySystem.h"
 #include <memory>
-#include <vector>
-#include <string>
 #include <raylib.h>
 
 class ControlPanel : public Widget {
@@ -26,24 +25,14 @@ public:
 private:
     SafetySystem* safetySystem;
     
-    // State buttons
-    std::unique_ptr<Button> authorizeButton;
-    std::unique_ptr<Button> armButton;
-    std::unique_ptr<Button> launchButton;
-    std::unique_ptr<Button> resetButton;
-    
-    // Authentication system
-    std::unique_ptr<InputBox> authCodeInput;
-    std::unique_ptr<InputBox> authCodeDisplay;
-    
-    // Keypad buttons
-    std::vector<std::unique_ptr<Button>> keypadButtons;
+    // Sub-panels
+    std::unique_ptr<LaunchSequencePanel> launchSequencePanel;
+    std::unique_ptr<KeypadPanel> keypadPanel;
+    std::unique_ptr<AuthCodePanel> authCodePanel;
     
     // Layout
-    Rectangle buttonArea;
-    Rectangle keypadArea;
-    Rectangle authArea;
-    Rectangle stateDisplayArea;
+    Rectangle leftPanelArea;
+    Rectangle rightPanelArea;
     
     // State tracking
     std::string currentAuthCode;
@@ -51,16 +40,10 @@ private:
     
     // Helper methods
     void setupLayout();
-    void createKeypad();
-    void updateButtonStates();
     void handleKeypadInput(char key);
-    void handleAuthCodeSubmit();
-    std::string getPhaseString(LaunchPhase phase) const;
-    Color getPhaseColor(LaunchPhase phase) const;
+    void handleBackspace();
+    void handleAuthCodeSubmit(const std::string& code);
     
     // Button callbacks
     void onAuthorize();
-    void onArm();
-    void onLaunch();
-    void onReset();
 };
