@@ -8,7 +8,7 @@
 #include "../sim/systems/PowerSystem.h"
 #include "../sim/systems/DepthSystem.h"
 #include "../sim/systems/TargetingSystem.h"
-#include "../sim/systems/SafetySystem.h"
+#include "../sim/systems/LaunchSequenceHandler.h"
 #include "../sim/systems/EnvironmentSystem.h"
 #include "../sim/world/ContactManager.h"
 #include "../sim/world/CrosshairManager.h"
@@ -27,17 +27,17 @@ public:
            PowerSystem* power,
            DepthSystem* depth,
            TargetingSystem* targeting,
-           SafetySystem* safety,
+           LaunchSequenceHandler* launchSequence,
            EnvironmentSystem* /*environment*/,
            ContactManager* contacts,
            CrosshairManager* crosshair)
-        : engine(engine), sonar(sonar), power(power), depth(depth), targeting(targeting), safety(safety), contacts(contacts), crosshairManager(crosshair) {
+        : engine(engine), sonar(sonar), power(power), depth(depth), targeting(targeting), launchSequence(launchSequence), contacts(contacts), crosshairManager(crosshair) {
 
         sonarView = std::make_unique<SonarView>(*contacts);
         statusPanel = std::make_unique<StatusPanel>(engine);
         powerView = std::make_unique<PowerView>(engine, *power);
         depthView = std::make_unique<DepthView>(engine, *depth);
-        controlPanel = std::make_unique<ControlPanel>(safety);
+        controlPanel = std::make_unique<ControlPanel>(engine);
         contactView = std::make_unique<ContactView>(*contacts);
         crosshairView = std::make_unique<CrosshairView>(*crosshairManager);
 
@@ -50,19 +50,16 @@ public:
     }
 
     void update(float dt) {
-        // Poll safety phase to log simple milestones
+        // Poll launch sequence phase to log simple milestones
         static LaunchPhase previous = LaunchPhase::Idle;
-        LaunchPhase current = safety->getPhase();
+        LaunchPhase current = launchSequence->getCurrentPhase();
         if (current != previous) {
             switch (current) {
-                case LaunchPhase::Authorized: break;
+                case LaunchPhase::Authorization: break;
                 case LaunchPhase::Arming: break;
-                case LaunchPhase::Armed: break;
-                case LaunchPhase::Launching: {
-                    
-                    break; }
+                case LaunchPhase::Launch: break;
                 case LaunchPhase::Launched: break;
-                case LaunchPhase::Resetting: break;
+                case LaunchPhase::Reset: break;
                 case LaunchPhase::Idle: break;
             }
             previous = current;
@@ -120,7 +117,7 @@ private:
     PowerSystem* power;
     DepthSystem* depth;
     TargetingSystem* targeting;
-    SafetySystem* safety;
+    LaunchSequenceHandler* launchSequence;
     ContactManager* contacts;
 
     std::unique_ptr<SonarView> sonarView;

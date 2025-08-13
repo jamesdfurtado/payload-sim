@@ -1,10 +1,14 @@
 #include "ControlPanel.h"
+#include "sim/systems/LaunchSequenceHandler.h"
 
-ControlPanel::ControlPanel(SafetySystem* safetySystem) 
-    : safetySystem(safetySystem), authCodeEntered(false) {
+ControlPanel::ControlPanel(SimulationEngine& engine) 
+    : authCodeEntered(false) {
+    
+    // Create launch sequence handler
+    sequenceHandler = std::make_unique<LaunchSequenceHandler>(engine);
     
     // Create sub-panels
-    launchSequencePanel = std::make_unique<LaunchSequencePanel>([this]() { onAuthorize(); });
+    launchSequencePanel = std::make_unique<LaunchSequencePanel>(sequenceHandler.get());
     keypadPanel = std::make_unique<KeypadPanel>(
         [this](char key) { authCodePanel->handleKeypadInput(key); },
         [this]() { authCodePanel->handleBackspace(); }
@@ -63,8 +67,7 @@ void ControlPanel::handleAuthCodeSubmit(const std::string& code) {
     currentAuthCode = code;
     if (code == "1511") {
         authCodeEntered = true;
-        // Submit to safety system
-        safetySystem->requestAuthorizationCode(code.c_str());
+        // TODO: Integrate with LaunchSequenceHandler if needed
     }
 }
 
@@ -112,8 +115,14 @@ bool ControlPanel::onMouseMove(Vector2 mousePos) {
     return false;
 }
 
+void ControlPanel::handleKeypadInput(char key) {
+    authCodePanel->handleKeypadInput(key);
+}
+
+void ControlPanel::handleBackspace() {
+    authCodePanel->handleBackspace();
+}
+
 void ControlPanel::onAuthorize() {
-    if (authCodeEntered) {
-        safetySystem->requestAuthorizationCode(currentAuthCode.c_str());
-    }
+    // This is now handled by the LaunchSequencePanel directly
 }

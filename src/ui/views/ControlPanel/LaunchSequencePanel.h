@@ -2,15 +2,13 @@
 
 #include "../../Widget.h"
 #include "../../widgets/Button.h"
+#include "../../../sim/systems/LaunchSequenceHandler.h"
 #include <memory>
-#include <functional>
 #include <raylib.h>
 
 class LaunchSequencePanel : public Widget {
 public:
-    using AuthorizeCallback = std::function<void()>;
-    
-    explicit LaunchSequencePanel(AuthorizeCallback onAuthorize = nullptr);
+    explicit LaunchSequencePanel(LaunchSequenceHandler* handler);
 
     // Widget interface
     void draw() const override;
@@ -23,7 +21,7 @@ public:
     void setBounds(Rectangle newBounds);
 
 private:
-    AuthorizeCallback authorizeCallback;
+    LaunchSequenceHandler* sequenceHandler;
     
     // State buttons
     std::unique_ptr<Button> authorizeButton;

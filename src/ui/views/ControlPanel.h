@@ -4,13 +4,14 @@
 #include "ControlPanel/LaunchSequencePanel.h"
 #include "ControlPanel/KeypadPanel.h"
 #include "ControlPanel/AuthCodePanel.h"
-#include "../../sim/systems/SafetySystem.h"
+#include "../../sim/systems/LaunchSequenceHandler.h"
+#include "../../sim/SimulationEngine.h"
 #include <memory>
 #include <raylib.h>
 
 class ControlPanel : public Widget {
 public:
-    explicit ControlPanel(SafetySystem* safetySystem);
+    explicit ControlPanel(SimulationEngine& engine);
 
     // Widget interface
     void draw() const override;
@@ -23,7 +24,8 @@ public:
     void setBounds(Rectangle newBounds);
 
 private:
-    SafetySystem* safetySystem;
+    // Launch sequence handler
+    std::unique_ptr<LaunchSequenceHandler> sequenceHandler;
     
     // Sub-panels
     std::unique_ptr<LaunchSequencePanel> launchSequencePanel;

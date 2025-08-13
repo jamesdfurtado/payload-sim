@@ -1,14 +1,10 @@
 #include "LaunchSequencePanel.h"
 
-LaunchSequencePanel::LaunchSequencePanel(AuthorizeCallback onAuthorize) 
-    : authorizeCallback(onAuthorize) {
+LaunchSequencePanel::LaunchSequencePanel(LaunchSequenceHandler* handler) 
+    : sequenceHandler(handler) {
     
     // Create state buttons with appropriate colors
-    authorizeButton = std::make_unique<Button>("AUTHORIZE LAUNCH", [this]() { 
-        if (authorizeCallback) {
-            authorizeCallback();
-        }
-    });
+    authorizeButton = std::make_unique<Button>("AUTHORIZE LAUNCH", [this]() { onAuthorize(); });
     authorizeButton->setColors(BLUE, BLUE, WHITE);
     
     armButton = std::make_unique<Button>("ARM WEAPON", [this]() { onArm(); });
@@ -96,19 +92,26 @@ bool LaunchSequencePanel::onMouseMove(Vector2 mousePos) {
 }
 
 void LaunchSequencePanel::onAuthorize() {
-    if (authorizeCallback) {
-        authorizeCallback();
+    if (sequenceHandler) {
+        sequenceHandler->startAuthorization();
+        // TODO: Display authorization result message
     }
 }
 
 void LaunchSequencePanel::onArm() {
-    // Removed business logic
+    if (sequenceHandler) {
+        sequenceHandler->arm();
+    }
 }
 
 void LaunchSequencePanel::onLaunch() {
-    // Removed business logic
+    if (sequenceHandler) {
+        sequenceHandler->launch();
+    }
 }
 
 void LaunchSequencePanel::onReset() {
-    // Removed business logic
+    if (sequenceHandler) {
+        sequenceHandler->reset();
+    }
 }
