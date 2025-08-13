@@ -125,68 +125,8 @@ void ContactManager::removeOutOfBoundsContacts() {
     }
 }
 
-void ContactManager::launchMissile(uint32_t targetId, const Vector2& launchPosition) {
-    if (!isContactAlive(targetId)) return;
-    missileState = {};
-    missileState.active = true;
-    missileState.position = launchPosition;
-    missileState.targetId = targetId;
-}
 
-void ContactManager::updateMissile(float dt) {
-    if (!missileState.active) return;
-    // find target
-    auto it = std::find_if(activeContacts.begin(), activeContacts.end(), [&](const SonarContact& c){return c.id == missileState.targetId;});
-    if (it == activeContacts.end()) {
-        missileState.targetValid = false;
-        missileState.active = false;
-        return;
-    }
-    Vector2 target = it->position;
-    const float dx = target.x - missileState.position.x;
-    const float dy = target.y - missileState.position.y;
-    const float len = std::sqrt(dx*dx + dy*dy);
-    const float speed = 300.0f;
-    if (len < 16.0f) {
-        // hit
-        removeContact(it->id);
-        missileState.active = false;
-        return;
-    }
-    missileState.position.x += (dx/len) * speed * dt;
-    missileState.position.y += (dy/len) * speed * dt;
-}
 
-size_t ContactManager::getEnemyCount() const {
-    size_t count = 0;
-    for (const auto& c : activeContacts) {
-        if (c.type == ContactType::EnemySub) count++;
-    }
-    return count;
-}
 
-size_t ContactManager::getFriendlyCount() const {
-    size_t count = 0;
-    for (const auto& c : activeContacts) {
-        if (c.type == ContactType::FriendlySub) count++;
-    }
-    return count;
-}
-
-size_t ContactManager::getFishCount() const {
-    size_t count = 0;
-    for (const auto& c : activeContacts) {
-        if (c.type == ContactType::Fish) count++;
-    }
-    return count;
-}
-
-size_t ContactManager::getDebrisCount() const {
-    size_t count = 0;
-    for (const auto& c : activeContacts) {
-        if (c.type == ContactType::Debris) count++;
-    }
-    return count;
-}
 
 
