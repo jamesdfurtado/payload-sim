@@ -8,6 +8,7 @@
 #include "sim/systems/SafetySystem.h"
 #include "sim/systems/EnvironmentSystem.h"
 #include "sim/world/ContactManager.h"
+#include "sim/world/CrosshairManager.h"
 #include "ui/UIRoot.h"
 
 int main() {

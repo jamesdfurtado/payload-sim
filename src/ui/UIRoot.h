@@ -11,10 +11,12 @@
 #include "../sim/systems/SafetySystem.h"
 #include "../sim/systems/EnvironmentSystem.h"
 #include "../sim/world/ContactManager.h"
+#include "../sim/world/CrosshairManager.h"
 #include "ui/views/SonarView.h"
 #include "ui/views/StatusPanel.h"
 #include "ui/views/ControlPanel.h"
 #include "ui/views/ContactView.h"
+#include "ui/views/CrosshairView.h"
 #include "ui/views/PowerView.h"
 #include "ui/views/DepthView.h"
 
@@ -36,6 +38,8 @@ public:
         depthView = std::make_unique<DepthView>(engine, *depth);
         controlPanel = std::make_unique<ControlPanel>(safety);
         contactView = std::make_unique<ContactView>(*contacts);
+        crosshairManager = std::make_unique<CrosshairManager>(*contacts);
+        crosshairView = std::make_unique<CrosshairView>(*crosshairManager);
 
         // Simple layout (manual rects to keep lean)
         sonarView->setBounds({20, 120, 600, 580});
@@ -72,11 +76,18 @@ public:
         powerView->update(dt);
         depthView->update(dt);
         controlPanel->update(dt);
+        crosshairManager->update(dt);
+
+        // Update crosshair manager with mouse position
+        Vector2 mouse = GetMousePosition();
+        crosshairManager->updateMousePosition(mouse, sonarView->getBounds());
 
         // Simple mouse routing
-        Vector2 mouse = GetMousePosition();
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             if (powerView->onMouseDown(mouse)) {} else if (depthView->onMouseDown(mouse)) {} else if (sonarView->onMouseDown(mouse)) {} else if (controlPanel->onMouseDown(mouse)) {}
+            
+            // Handle crosshair selection
+            crosshairManager->handleMouseClick(mouse, sonarView->getBounds());
         }
         if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
             if (powerView->onMouseUp(mouse)) {} else if (depthView->onMouseUp(mouse)) {} else if (sonarView->onMouseUp(mouse)) {} else if (controlPanel->onMouseUp(mouse)) {}
@@ -95,11 +106,14 @@ public:
         depthView->draw();
         controlPanel->draw();
 
-        // Draw sonar view first (background, grid, crosshair, submarine)
+        // Draw sonar view first (background, grid, submarine)
         sonarView->draw();
         
         // Then overlay contacts on top of the sonar display
         contactView->drawContactsOnSonar(sonarView->getBounds());
+        
+        // Finally overlay crosshair and selection circle
+        crosshairView->drawOnSonar(sonarView->getBounds());
     }
 
 private:
@@ -117,6 +131,8 @@ private:
     std::unique_ptr<DepthView> depthView;
     std::unique_ptr<ControlPanel> controlPanel;
     std::unique_ptr<ContactView> contactView;
+    std::unique_ptr<CrosshairManager> crosshairManager;
+    std::unique_ptr<CrosshairView> crosshairView;
 
 };
 
