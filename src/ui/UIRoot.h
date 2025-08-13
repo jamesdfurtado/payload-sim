@@ -29,8 +29,9 @@ public:
            TargetingSystem* targeting,
            SafetySystem* safety,
            EnvironmentSystem* /*environment*/,
-           ContactManager* contacts)
-        : engine(engine), sonar(sonar), power(power), depth(depth), targeting(targeting), safety(safety), contacts(contacts) {
+           ContactManager* contacts,
+           CrosshairManager* crosshair)
+        : engine(engine), sonar(sonar), power(power), depth(depth), targeting(targeting), safety(safety), contacts(contacts), crosshairManager(crosshair) {
 
         sonarView = std::make_unique<SonarView>(*contacts);
         statusPanel = std::make_unique<StatusPanel>(engine);
@@ -38,7 +39,6 @@ public:
         depthView = std::make_unique<DepthView>(engine, *depth);
         controlPanel = std::make_unique<ControlPanel>(safety);
         contactView = std::make_unique<ContactView>(*contacts);
-        crosshairManager = std::make_unique<CrosshairManager>(*contacts);
         crosshairView = std::make_unique<CrosshairView>(*crosshairManager);
 
         // Simple layout (manual rects to keep lean)
@@ -131,7 +131,7 @@ private:
     std::unique_ptr<DepthView> depthView;
     std::unique_ptr<ControlPanel> controlPanel;
     std::unique_ptr<ContactView> contactView;
-    std::unique_ptr<CrosshairManager> crosshairManager;
+    CrosshairManager* crosshairManager;
     std::unique_ptr<CrosshairView> crosshairView;
 
 };

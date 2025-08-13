@@ -7,6 +7,7 @@
 #include "sim/systems/TargetingSystem.h"
 #include "sim/systems/SafetySystem.h"
 #include "sim/systems/EnvironmentSystem.h"
+#include "sim/systems/TargetAcquisitionSystem.h"
 #include "sim/world/ContactManager.h"
 #include "sim/world/CrosshairManager.h"
 #include "ui/UIRoot.h"
@@ -27,6 +28,8 @@ int main() {
     auto targeting = std::make_shared<TargetingSystem>();
     auto environment = std::make_shared<EnvironmentSystem>();
     auto safety = std::make_shared<SafetySystem>();
+    auto crosshairManager = std::make_shared<CrosshairManager>(*contacts);
+    auto targetAcquisition = std::make_shared<TargetAcquisitionSystem>(*crosshairManager, *contacts);
 
     engine.registerSystem(power);
     engine.registerSystem(depth);
@@ -34,6 +37,7 @@ int main() {
     engine.registerSystem(targeting);
     engine.registerSystem(environment);
     engine.registerSystem(safety);
+    engine.registerSystem(targetAcquisition);
 
 
     // these need to be moved out of main.cpp at some point.
@@ -43,7 +47,7 @@ int main() {
     safety->setPowerOffCallback([power]{ power->setPowerLevel(0.0f); });
 
     // UI root with direct pointers to systems/state
-    UIRoot ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), safety.get(), environment.get(), contacts.get());
+    UIRoot ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), safety.get(), environment.get(), contacts.get(), crosshairManager.get());
 
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime();
