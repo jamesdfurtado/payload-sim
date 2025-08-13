@@ -60,7 +60,7 @@ void ControlPanel::setupLayout() {
     
     // State display area (top, spans full width)
     stateDisplayArea.x = bounds.x + margin;
-    stateDisplayArea.y = bounds.y + margin;
+    stateDisplayArea.y = bounds.y + margin - 50; // Move up 50px
     stateDisplayArea.width = bounds.width - 2 * margin;
     stateDisplayArea.height = 40;
     
@@ -83,7 +83,7 @@ void ControlPanel::setupLayout() {
     keypadArea.height = (bounds.height - (authArea.y + authArea.height + margin) - margin) * 0.8f; // Increase height from 50% to 80% too
     
     // Position state buttons (left side, vertical stack)
-    float buttonY = buttonArea.y;
+    float buttonY = buttonArea.y + 50; // Move down 50px
     authorizeButton->setBounds(Rectangle{buttonArea.x, buttonY, leftWidth, buttonHeight});
     buttonY += buttonHeight + margin;
     
@@ -257,7 +257,8 @@ void ControlPanel::draw() const {
     // Draw title
     DrawText("CONTROL PANEL", bounds.x + 20, bounds.y + 10, 20, RAYWHITE);
     
-    // Draw payload state display
+    // Draw payload state display 
+    /*
     LaunchPhase currentPhase = safetySystem->getPhase();
     std::string stateText = "Payload State: " + getPhaseString(currentPhase);
     Color stateColor = getPhaseColor(currentPhase);
@@ -269,7 +270,8 @@ void ControlPanel::draw() const {
     int textX = (int)(stateDisplayArea.x + (stateDisplayArea.width - textWidth) / 2);
     int textY = (int)(stateDisplayArea.y + (stateDisplayArea.height - 18) / 2);
     DrawText(stateText.c_str(), textX, textY, 18, stateColor);
-    
+    */
+
     // Draw state buttons
     authorizeButton->draw();
     armButton->draw();
