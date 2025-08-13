@@ -14,7 +14,6 @@ public:
         contactManager.updateSpawnTimer(dt);
         contactManager.spawnContactsIfNeeded();
         contactManager.removeOutOfBoundsContacts();
-        contactManager.updateMissile(dt);
 
         // Maintain a selected target if available; fall back to nearest
         if (selectedTargetId != 0 && !contactManager.isContactAlive(selectedTargetId)) {
