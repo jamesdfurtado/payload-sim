@@ -1,10 +1,13 @@
 #pragma once
 
 #include "CurrentLaunchPhase.h"
+#include "IdlePhase.h"
+
+class SimulationEngine; // forward declaration
 
 class LaunchSequenceHandler {
 public:
-    LaunchSequenceHandler();
+    explicit LaunchSequenceHandler(SimulationEngine& engine);
     ~LaunchSequenceHandler();
 
     // Request functions for UI button presses
@@ -21,4 +24,5 @@ public:
     
 private:
     CurrentLaunchPhase currentPhase;
+    SimulationEngine& engine;
 };

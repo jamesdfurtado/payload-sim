@@ -30,7 +30,7 @@ int main() {
     auto sonar = std::make_shared<SonarSystem>(*contacts);
     auto targeting = std::make_shared<TargetingSystem>();
     auto environment = std::make_shared<EnvironmentSystem>();
-    auto launchSequence = std::make_shared<LaunchSequenceHandler>();
+    auto launchSequence = std::make_shared<LaunchSequenceHandler>(engine);
     auto crosshairManager = std::make_shared<CrosshairManager>(*contacts);
     auto targetAcquisition = std::make_shared<TargetAcquisitionSystem>(*crosshairManager, *contacts);
     auto targetValidation = std::make_shared<TargetValidationSystem>(*crosshairManager, *contacts);

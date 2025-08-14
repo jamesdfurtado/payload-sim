@@ -4,8 +4,8 @@
 ControlPanel::ControlPanel(SimulationEngine& engine) 
     : authCodeEntered(false) {
     
-    // Create launch sequence handler
-    sequenceHandler = std::make_unique<LaunchSequenceHandler>();
+// Create launch sequence handler
+sequenceHandler = std::make_unique<LaunchSequenceHandler>(engine);
     
     // Create sub-panels
     launchSequencePanel = std::make_unique<LaunchSequencePanel>(sequenceHandler.get());
