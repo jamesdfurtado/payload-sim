@@ -4,6 +4,7 @@
 #include "LaunchSequencePanel.h"
 #include "KeypadPanel.h"
 #include "AuthCodePanel.h"
+#include "LaunchPhaseDisplay.h"
 #include "../../../sim/systems/LaunchSequenceHandler/LaunchSequenceHandler.h"
 #include "../../../sim/SimulationEngine.h"
 #include <memory>
@@ -31,6 +32,7 @@ private:
     std::unique_ptr<LaunchSequencePanel> launchSequencePanel;
     std::unique_ptr<KeypadPanel> keypadPanel;
     std::unique_ptr<AuthCodePanel> authCodePanel;
+    std::unique_ptr<LaunchPhaseDisplay> phaseDisplay;
     
     // Layout
     Rectangle leftPanelArea;

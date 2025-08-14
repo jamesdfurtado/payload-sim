@@ -17,6 +17,9 @@ ControlPanel::ControlPanel(SimulationEngine& engine)
         [this](const std::string& code) { handleAuthCodeSubmit(code); }
     );
     
+    // Create phase display
+    phaseDisplay = std::make_unique<LaunchPhaseDisplay>();
+    
     // Set initial bounds and layout
     setBounds(Rectangle{0, 0, 400, 600});
 }
@@ -48,6 +51,12 @@ void ControlPanel::setupLayout() {
     // Set bounds for sub-panels
     launchSequencePanel->setBounds(leftPanelArea);
     
+    // Set bounds for phase display (below launch sequence panel)
+    Rectangle phaseDisplayArea = leftPanelArea;
+    phaseDisplayArea.y = leftPanelArea.y + leftPanelArea.height - 50; // Position at bottom of left panel
+    phaseDisplayArea.height = 50;
+    phaseDisplay->setBounds(phaseDisplayArea);
+    
     // Split right panel between auth and keypad
     Rectangle authArea = rightPanelArea;
     authArea.height = 100;
@@ -72,6 +81,11 @@ void ControlPanel::handleAuthCodeSubmit(const std::string& code) {
 }
 
 void ControlPanel::update(float dt) {
+    // Update phase display with current phase
+    if (sequenceHandler) {
+        phaseDisplay->setCurrentPhase(sequenceHandler->getCurrentPhaseString());
+    }
+    
     // Update all sub-panels
     launchSequencePanel->update(dt);
     keypadPanel->update(dt);
@@ -89,6 +103,9 @@ void ControlPanel::draw() const {
     launchSequencePanel->draw();
     keypadPanel->draw();
     authCodePanel->draw();
+    
+    // Draw phase display
+    phaseDisplay->draw();
 }
 
 bool ControlPanel::onMouseDown(Vector2 mousePos) {
