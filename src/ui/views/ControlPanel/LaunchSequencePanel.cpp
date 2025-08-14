@@ -93,25 +93,24 @@ bool LaunchSequencePanel::onMouseMove(Vector2 mousePos) {
 
 void LaunchSequencePanel::onAuthorize() {
     if (sequenceHandler) {
-        sequenceHandler->startAuthorization();
-        // TODO: Display authorization result message
+        sequenceHandler->requestAuthorization();
     }
 }
 
 void LaunchSequencePanel::onArm() {
     if (sequenceHandler) {
-        sequenceHandler->arm();
+        sequenceHandler->requestArm();
     }
 }
 
 void LaunchSequencePanel::onLaunch() {
     if (sequenceHandler) {
-        sequenceHandler->launch();
+        sequenceHandler->requestLaunch();
     }
 }
 
 void LaunchSequencePanel::onReset() {
     if (sequenceHandler) {
-        sequenceHandler->reset();
+        sequenceHandler->requestReset();
     }
 }

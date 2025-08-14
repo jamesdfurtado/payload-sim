@@ -50,21 +50,6 @@ public:
     }
 
     void update(float dt) {
-        // Poll launch sequence phase to log simple milestones
-        static LaunchPhase previous = LaunchPhase::Idle;
-        LaunchPhase current = launchSequence->getCurrentPhase();
-        if (current != previous) {
-            switch (current) {
-                case LaunchPhase::Authorization: break;
-                case LaunchPhase::Arming: break;
-                case LaunchPhase::Launch: break;
-                case LaunchPhase::Launched: break;
-                case LaunchPhase::Reset: break;
-                case LaunchPhase::Idle: break;
-            }
-            previous = current;
-        }
-
         // Update all views
         powerView->update(dt);
         depthView->update(dt);
