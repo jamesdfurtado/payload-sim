@@ -28,3 +28,7 @@ void LaunchSequenceHandler::requestReset() {
     std::cout << "[LaunchSequenceHandler] Reset requested" << std::endl;
     // TODO: Implement reset request logic
 }
+
+void LaunchSequenceHandler::getCurrentPhase() {
+    // TODO: Implement phase retrieval
+}

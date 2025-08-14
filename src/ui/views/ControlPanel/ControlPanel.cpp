@@ -1,5 +1,5 @@
 #include "ControlPanel.h"
-#include "sim/systems/LaunchSequenceHandler.h"
+#include "../../../sim/systems/LaunchSequenceHandler/LaunchSequenceHandler.h"
 
 ControlPanel::ControlPanel(SimulationEngine& engine) 
     : authCodeEntered(false) {

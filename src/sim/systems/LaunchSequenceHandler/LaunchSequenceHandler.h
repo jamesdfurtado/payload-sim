@@ -11,6 +11,7 @@ public:
     void requestLaunch();
     void requestReset();
 
+    void getCurrentPhase();
 private:
     // TODO: Add state management and implementation details
 };

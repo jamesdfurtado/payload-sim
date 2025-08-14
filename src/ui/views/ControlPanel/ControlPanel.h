@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Widget.h"
-#include "ControlPanel/LaunchSequencePanel.h"
-#include "ControlPanel/KeypadPanel.h"
-#include "ControlPanel/AuthCodePanel.h"
-#include "../../sim/systems/LaunchSequenceHandler.h"
-#include "../../sim/SimulationEngine.h"
+#include "../../Widget.h"
+#include "LaunchSequencePanel.h"
+#include "KeypadPanel.h"
+#include "AuthCodePanel.h"
+#include "../../../sim/systems/LaunchSequenceHandler/LaunchSequenceHandler.h"
+#include "../../../sim/SimulationEngine.h"
 #include <memory>
 #include <raylib.h>
 

@@ -5,7 +5,7 @@
 #include "sim/systems/DepthSystem.h"
 #include "sim/systems/SonarSystem.h"
 #include "sim/systems/TargetingSystem.h"
-#include "sim/systems/LaunchSequenceHandler.h"
+#include "sim/systems/LaunchSequenceHandler/LaunchSequenceHandler.h"
 #include "sim/systems/EnvironmentSystem.h"
 #include "sim/systems/TargetAcquisitionSystem.h"
 #include "sim/systems/TargetValidationSystem.h"
