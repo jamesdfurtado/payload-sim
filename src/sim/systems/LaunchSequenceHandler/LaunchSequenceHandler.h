@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CurrentLaunchPhase.h"
+
 class LaunchSequenceHandler {
 public:
     LaunchSequenceHandler();
@@ -11,7 +13,12 @@ public:
     void requestLaunch();
     void requestReset();
 
-    void getCurrentPhase();
+    // Get current phase
+    CurrentLaunchPhase getCurrentPhase() const;
+    
+    // Get current phase as string for display
+    const char* getCurrentPhaseString() const;
+    
 private:
-    // TODO: Add state management and implementation details
+    CurrentLaunchPhase currentPhase;
 };
