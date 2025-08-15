@@ -38,7 +38,7 @@ void LaunchSequencePanel::setupLayout() {
     buttonArea.height = 4 * buttonHeight + 3 * margin;
     
     // Position buttons vertically (moved down a bit)
-    float buttonY = buttonArea.y + 30; // Add 30px offset to move buttons down
+    float buttonY = buttonArea.y + 80; // Add 80px offset to move buttons down
     authorizeButton->setBounds(Rectangle{buttonArea.x, buttonY, buttonWidth, buttonHeight});
     buttonY += buttonHeight + margin;
     

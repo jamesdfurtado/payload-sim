@@ -48,9 +48,9 @@ void ControlPanel::setupLayout() {
     // Set bounds for sub-panels
     launchSequencePanel->setBounds(leftPanelArea);
     
-    // Set bounds for phase display (below launch sequence panel)
+    // Set bounds for phase display (above launch sequence panel)
     Rectangle phaseDisplayArea = leftPanelArea;
-    phaseDisplayArea.y = leftPanelArea.y + leftPanelArea.height - 50; // Position at bottom of left panel
+    phaseDisplayArea.y = leftPanelArea.y + 50; // Position 200px up from bottom (was bottom - 50, now top + 50)
     phaseDisplayArea.height = 50;
     phaseDisplay->setBounds(phaseDisplayArea);
     

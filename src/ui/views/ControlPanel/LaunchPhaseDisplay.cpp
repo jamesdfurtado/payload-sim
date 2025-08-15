@@ -12,10 +12,10 @@ void LaunchPhaseDisplay::draw() const {
     
     // Draw the phase text
     const char* phaseText = "Payload Phase: ";
-    DrawText(phaseText, bounds.x + 10, bounds.y + 15, 16, RAYWHITE);
+    DrawText(phaseText, bounds.x + 10, bounds.y - 15, 22, RAYWHITE);
     
     // Draw the current phase in yellow
-    DrawText(currentPhaseText, bounds.x + 10 + MeasureText(phaseText, 16), bounds.y + 15, 16, YELLOW);
+    DrawText(currentPhaseText, bounds.x + 10 + MeasureText(phaseText, 22), bounds.y - 15, 22, YELLOW);
 }
 
 void LaunchPhaseDisplay::setCurrentPhase(const char* phaseText) {
