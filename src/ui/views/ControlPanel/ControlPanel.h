@@ -12,7 +12,7 @@
 
 class ControlPanel : public Widget {
 public:
-    explicit ControlPanel(SimulationEngine& engine);
+    explicit ControlPanel(SimulationEngine& engine, LaunchSequenceHandler* launchSequence);
 
     // Widget interface
     void draw() const override;
@@ -25,8 +25,8 @@ public:
     void setBounds(Rectangle newBounds);
 
 private:
-    // Launch sequence handler
-    std::unique_ptr<LaunchSequenceHandler> sequenceHandler;
+    // Launch sequence handler (from UIRoot)
+    LaunchSequenceHandler* sequenceHandler;
     
     // Sub-panels
     std::unique_ptr<LaunchSequencePanel> launchSequencePanel;
@@ -37,10 +37,6 @@ private:
     // Layout
     Rectangle leftPanelArea;
     Rectangle rightPanelArea;
-    
-    // State tracking
-    std::string currentAuthCode;
-    bool authCodeEntered;
     
     // Helper methods
     void setupLayout();

@@ -26,6 +26,7 @@ public:
     // Public interface
     void setAuthCode(const std::string& code);
     void clearInput();
+    void clearAuthCodeDisplay();
     void setInputBorderColor(Color color);
     bool isInputComplete() const;
     std::string getInputValue() const;

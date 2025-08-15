@@ -21,8 +21,8 @@ AuthCodePanel::AuthCodePanel(AuthCodeCallback onAuthCodeSubmit)
     displayStyle.textSize = 20;
     authCodeDisplay->setStyle(displayStyle);
     
-    // Set initial auth code display
-    authCodeDisplay->setValue("1511");
+    // Set initial auth code display to empty
+    authCodeDisplay->setValue("----");
     
     // Set initial bounds and layout
     setBounds(Rectangle{0, 0, 200, 100});
@@ -53,11 +53,20 @@ void AuthCodePanel::setupLayout() {
 
 void AuthCodePanel::setAuthCode(const std::string& code) {
     currentAuthCode = code;
-    authCodeDisplay->setValue(code);
+    if (!code.empty()) {
+        authCodeDisplay->setValue(code);
+    } else {
+        authCodeDisplay->setValue("----");
+    }
 }
 
 void AuthCodePanel::clearInput() {
     authCodeInput->clear();
+}
+
+void AuthCodePanel::clearAuthCodeDisplay() {
+    currentAuthCode.clear();
+    authCodeDisplay->setValue("----");
 }
 
 void AuthCodePanel::setInputBorderColor(Color color) {

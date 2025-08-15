@@ -1,5 +1,8 @@
 #include "IdlePhase.h"
 #include "../../SimulationState.h"
+#include <random>
+#include <sstream>
+#include <iomanip>
 
 AuthorizationResult IdlePhase::canAuthorize(const SimulationState& state) {
     // Define all conditions and their failure messages
@@ -62,4 +65,18 @@ bool IdlePhase::checkNoFriendlyUnitsInBlastRadius(const SimulationState& state) 
 
 bool IdlePhase::checkLaunchConditionsFavorable(const SimulationState& state) {
     return state.launchConditionsFavorable;
+}
+
+std::string IdlePhase::createCode() {
+    // Generate a random 4-digit code
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 9999);
+    
+    int code = dis(gen);
+    
+    // Format as 4-digit string with leading zeros if needed
+    std::ostringstream oss;
+    oss << std::setw(4) << std::setfill('0') << code;
+    return oss.str();
 }

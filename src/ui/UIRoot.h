@@ -37,7 +37,7 @@ public:
         statusPanel = std::make_unique<StatusPanel>(engine);
         powerView = std::make_unique<PowerView>(engine, *power);
         depthView = std::make_unique<DepthView>(engine, *depth);
-        controlPanel = std::make_unique<ControlPanel>(engine);
+        controlPanel = std::make_unique<ControlPanel>(engine, launchSequence);
         contactView = std::make_unique<ContactView>(*contacts);
         crosshairView = std::make_unique<CrosshairView>(*crosshairManager);
 

@@ -17,6 +17,9 @@ public:
     // Check if we can move from Idle to Authorized state
     static AuthorizationResult canAuthorize(const SimulationState& state);
     
+    // Generate a random 4-digit authorization code
+    static std::string createCode();
+    
 private:
     // Helper methods to check individual conditions
     static bool checkTargetValidated(const SimulationState& state);

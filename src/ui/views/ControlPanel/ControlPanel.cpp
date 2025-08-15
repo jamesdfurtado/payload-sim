@@ -1,14 +1,11 @@
 #include "ControlPanel.h"
 #include "../../../sim/systems/LaunchSequenceHandler/LaunchSequenceHandler.h"
 
-ControlPanel::ControlPanel(SimulationEngine& engine) 
-    : authCodeEntered(false) {
-    
-// Create launch sequence handler
-sequenceHandler = std::make_unique<LaunchSequenceHandler>(engine);
+ControlPanel::ControlPanel(SimulationEngine& engine, LaunchSequenceHandler* launchSequence) 
+    : sequenceHandler(launchSequence) {
     
     // Create sub-panels
-    launchSequencePanel = std::make_unique<LaunchSequencePanel>(sequenceHandler.get());
+    launchSequencePanel = std::make_unique<LaunchSequencePanel>(sequenceHandler);
     keypadPanel = std::make_unique<KeypadPanel>(
         [this](char key) { authCodePanel->handleKeypadInput(key); },
         [this]() { authCodePanel->handleBackspace(); }
@@ -73,10 +70,8 @@ void ControlPanel::setupLayout() {
 }
 
 void ControlPanel::handleAuthCodeSubmit(const std::string& code) {
-    currentAuthCode = code;
-    if (code == "1511") {
-        authCodeEntered = true;
-        // TODO: Integrate with LaunchSequenceHandler if needed
+    if (sequenceHandler) {
+        sequenceHandler->submitAuthorization(code);
     }
 }
 
@@ -84,6 +79,17 @@ void ControlPanel::update(float dt) {
     // Update phase display with current phase
     if (sequenceHandler) {
         phaseDisplay->setCurrentPhase(sequenceHandler->getCurrentPhaseString());
+        
+        // Update auth code display with current generated code
+        const std::string& currentAuthCode = sequenceHandler->getAuthCode();
+        if (!currentAuthCode.empty()) {
+            authCodePanel->setAuthCode(currentAuthCode);
+        } else {
+            // Clear the auth code display when no code is available
+            authCodePanel->clearAuthCodeDisplay();
+            // Also clear the input field when auth code is cleared
+            authCodePanel->clearInput();
+        }
     }
     
     // Update all sub-panels
