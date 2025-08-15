@@ -31,8 +31,8 @@ public:
         updateIndicatorStates(s);
         
         // Position and draw indicators in 3x3 grid
-        const int pad = 10;
-        const int boxW = 150;
+        const int pad = 15;
+        const int boxW = 180;
         const int boxH = 28;
         
         int x = (int)bounds.x + pad;
@@ -40,7 +40,16 @@ public:
         int index = 0;
         
         for (auto& indicator : indicators) {
-            indicator->setBounds({(float)x, (float)y, (float)boxW, (float)boxH});
+            // Adjust vertical position: top row stays same, others move up by 10px each
+            float adjustedY = (float)y;
+            if (index >= 3) { // Second row
+                adjustedY -= 10;
+            }
+            if (index >= 6) { // Third row
+                adjustedY -= 10;
+            }
+            
+            indicator->setBounds({(float)x, adjustedY, (float)boxW, (float)boxH});
             indicator->draw();
             
             x += boxW + pad;

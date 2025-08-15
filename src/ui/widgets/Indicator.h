@@ -22,8 +22,8 @@ public:
         int centerY = (int)(bounds.y + bounds.height / 2);
         DrawCircle(centerX, centerY, 8, lightColor);
         
-        // Draw text label
-        DrawText(label.c_str(), (int)(bounds.x + 28), (int)(bounds.y + 6), 16, RAYWHITE);
+        // Draw text label - positioned further right to accommodate longer box
+        DrawText(label.c_str(), (int)(bounds.x + 32), (int)(bounds.y + 6), 16, RAYWHITE);
     }
 
 private:
