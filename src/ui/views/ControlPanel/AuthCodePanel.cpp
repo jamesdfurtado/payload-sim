@@ -17,9 +17,9 @@ void AuthCodePanel::setupLayout() {
     // Calculate layout for horizontal input boxes
     float margin = 15;
     float inputHeight = 30;
-    float inputWidth = (bounds.width - 3 * margin) / 2;
+    float boxWidth = (bounds.width - 3 * margin) / 2;  // Equal width for both boxes
     
-    // Auth area
+    // Auth area - now just for positioning reference
     authArea.x = bounds.x + margin;
     authArea.y = bounds.y + margin;
     authArea.width = bounds.width - 2 * margin;
@@ -72,20 +72,25 @@ void AuthCodePanel::update(float dt) {
 }
 
 void AuthCodePanel::draw() const {
+    // Calculate box dimensions
+    float margin = 15;
+    float boxWidth = (bounds.width - 3 * margin) / 2;
+    
     // Draw authentication section
     DrawText("Enter code:", authArea.x, authArea.y - 25, 16, {0, 255, 255, 255});
     
-    // Draw input box (simplified)
-    DrawRectangleRec(authArea, {20, 20, 20, 255});
-    DrawRectangleLinesEx(authArea, 2, GREEN);
-    DrawText(inputValue.c_str(), authArea.x + 10, authArea.y + 5, 20, WHITE);
+    // Draw input box (same size as display box)
+    Rectangle inputBox = {authArea.x, authArea.y, boxWidth, authArea.height};
+    DrawRectangleRec(inputBox, {20, 20, 20, 255});
+    DrawRectangleLinesEx(inputBox, 2, GRAY);
+    DrawText(inputValue.c_str(), inputBox.x + 10, inputBox.y + 5, 20, WHITE);
     
-    DrawText("AUTH CODE:", authArea.x + authArea.width / 2, authArea.y - 25, 16, {0, 255, 255, 255});
+    DrawText("AUTH CODE:", authArea.x + authArea.width / 2 + 20, authArea.y - 25, 16, {0, 255, 255, 255});
     
-    // Draw display box (simplified)
-    Rectangle displayBox = {authArea.x + authArea.width / 2, authArea.y, authArea.width / 2 - 15, authArea.height};
+    // Draw display box (same size as input box, moved 20 pixels right)
+    Rectangle displayBox = {authArea.x + boxWidth + margin + 20, authArea.y, boxWidth, authArea.height};
     DrawRectangleRec(displayBox, {20, 20, 20, 255});
-    DrawRectangleLinesEx(displayBox, 2, {0, 255, 255, 255});
+    DrawRectangleLinesEx(displayBox, 2, GRAY);
     DrawText(displayValue.c_str(), displayBox.x + 10, displayBox.y + 5, 20, YELLOW);
 }
 
