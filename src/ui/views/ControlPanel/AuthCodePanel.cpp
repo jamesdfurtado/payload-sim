@@ -2,27 +2,7 @@
 #include <cctype>
 
 AuthCodePanel::AuthCodePanel(AuthCodeCallback onAuthCodeSubmit)
-    : authCodeCallback(onAuthCodeSubmit), authCodeEntered(false) {
-    
-    // Create authentication input boxes
-    authCodeInput = std::make_unique<InputBox>(4);
-    InputBox::InputBoxStyle inputStyle;
-    inputStyle.backgroundColor = {20, 20, 20, 255};
-    inputStyle.borderColor = GREEN;
-    inputStyle.textColor = WHITE;
-    inputStyle.textSize = 20;
-    authCodeInput->setStyle(inputStyle);
-    
-    authCodeDisplay = std::make_unique<InputBox>(4);
-    InputBox::InputBoxStyle displayStyle;
-    displayStyle.backgroundColor = {20, 20, 20, 255};
-    displayStyle.borderColor = {0, 255, 255, 255}; // Cyan
-    displayStyle.textColor = YELLOW;
-    displayStyle.textSize = 20;
-    authCodeDisplay->setStyle(displayStyle);
-    
-    // Set initial auth code display to empty
-    authCodeDisplay->setValue("----");
+    : authCodeCallback(onAuthCodeSubmit), authCodeEntered(false), inputValue(""), displayValue("----") {
     
     // Set initial bounds and layout
     setBounds(Rectangle{0, 0, 200, 100});
@@ -44,45 +24,40 @@ void AuthCodePanel::setupLayout() {
     authArea.y = bounds.y + margin;
     authArea.width = bounds.width - 2 * margin;
     authArea.height = inputHeight;
-    
-    // Position auth input boxes horizontally
-    float authY = authArea.y;
-    authCodeInput->setBounds(Rectangle{authArea.x, authY, inputWidth, inputHeight});
-    authCodeDisplay->setBounds(Rectangle{authArea.x + inputWidth + margin, authY, inputWidth, inputHeight});
 }
 
 void AuthCodePanel::setAuthCode(const std::string& code) {
     currentAuthCode = code;
     if (!code.empty()) {
-        authCodeDisplay->setValue(code);
+        displayValue = code;
     } else {
-        authCodeDisplay->setValue("----");
+        displayValue = "----";
     }
 }
 
 void AuthCodePanel::clearInput() {
-    authCodeInput->clear();
+    inputValue.clear();
 }
 
 void AuthCodePanel::clearAuthCodeDisplay() {
     currentAuthCode.clear();
-    authCodeDisplay->setValue("----");
+    displayValue = "----";
 }
 
 void AuthCodePanel::setInputBorderColor(Color color) {
-    authCodeInput->setBorderColor(color);
+    // No longer needed - simplified implementation
 }
 
 bool AuthCodePanel::isInputComplete() const {
-    return authCodeInput->isComplete();
+    return inputValue.length() == 4;
 }
 
 std::string AuthCodePanel::getInputValue() const {
-    return authCodeInput->getValue();
+    return inputValue;
 }
 
 void AuthCodePanel::handleAuthCodeSubmit() {
-    currentAuthCode = authCodeInput->getValue();
+    currentAuthCode = inputValue;
     // Removed validation logic - just call callback
     if (authCodeCallback) {
         authCodeCallback(currentAuthCode);
@@ -91,7 +66,7 @@ void AuthCodePanel::handleAuthCodeSubmit() {
 
 void AuthCodePanel::update(float dt) {
     // Check if input is complete and auto-submit
-    if (authCodeInput->isComplete()) {
+    if (isInputComplete()) {
         handleAuthCodeSubmit();
     }
 }
@@ -99,38 +74,49 @@ void AuthCodePanel::update(float dt) {
 void AuthCodePanel::draw() const {
     // Draw authentication section
     DrawText("Enter code:", authArea.x, authArea.y - 25, 16, {0, 255, 255, 255});
-    authCodeInput->draw();
+    
+    // Draw input box (simplified)
+    DrawRectangleRec(authArea, {20, 20, 20, 255});
+    DrawRectangleLinesEx(authArea, 2, GREEN);
+    DrawText(inputValue.c_str(), authArea.x + 10, authArea.y + 5, 20, WHITE);
     
     DrawText("AUTH CODE:", authArea.x + authArea.width / 2, authArea.y - 25, 16, {0, 255, 255, 255});
-    authCodeDisplay->draw();
+    
+    // Draw display box (simplified)
+    Rectangle displayBox = {authArea.x + authArea.width / 2, authArea.y, authArea.width / 2 - 15, authArea.height};
+    DrawRectangleRec(displayBox, {20, 20, 20, 255});
+    DrawRectangleLinesEx(displayBox, 2, {0, 255, 255, 255});
+    DrawText(displayValue.c_str(), displayBox.x + 10, displayBox.y + 5, 20, YELLOW);
 }
 
 bool AuthCodePanel::onMouseDown(Vector2 mousePos) {
-    // Input boxes don't handle mouse events directly
+    // No mouse handling needed for simple text display
     return false;
 }
 
 bool AuthCodePanel::onMouseUp(Vector2 mousePos) {
-    // Input boxes don't handle mouse events directly
+    // No mouse handling needed for simple text display
     return false;
 }
 
 bool AuthCodePanel::onMouseMove(Vector2 mousePos) {
-    // Input boxes don't handle mouse events directly
+    // No mouse handling needed for simple text display
     return false;
 }
 
 void AuthCodePanel::handleKeypadInput(char key) {
-    if (isdigit(key)) {
-        authCodeInput->addDigit(key);
+    if (isdigit(key) && inputValue.length() < 4) {
+        inputValue += key;
         
         // Auto-submit when 4 digits are entered
-        if (authCodeInput->isComplete()) {
+        if (isInputComplete()) {
             handleAuthCodeSubmit();
         }
     }
 }
 
 void AuthCodePanel::handleBackspace() {
-    authCodeInput->removeDigit();
+    if (!inputValue.empty()) {
+        inputValue.pop_back();
+    }
 }
