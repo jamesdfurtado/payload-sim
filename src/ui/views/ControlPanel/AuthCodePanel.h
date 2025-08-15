@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Widget.h"
+#include "../../widgets/TextBox.h"
 #include <memory>
 #include <string>
 #include <functional>
@@ -38,9 +39,9 @@ private:
     // Callback
     AuthCodeCallback authCodeCallback;
     
-    // Input state
-    std::string inputValue;
-    std::string displayValue;
+    // TextBox widgets
+    std::unique_ptr<TextBox> inputBox;
+    std::unique_ptr<TextBox> displayBox;
     
     // Layout
     Rectangle authArea;
