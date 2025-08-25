@@ -2,6 +2,8 @@
 
 #include "CurrentLaunchPhase.h"
 #include "IdlePhase.h"
+#include "../../SimulationState.h"
+#include <string>
 
 class SimulationEngine; // forward declaration
 
@@ -31,6 +33,16 @@ public:
     
     // Force clear the authorization code (useful for external reset)
     void clearAuthCode();
+
+    // Static methods to check boolean flags from SimulationState
+    static bool checkTargetValidated(const SimulationState& state);
+    static bool checkTargetAcquired(const SimulationState& state);
+    static bool checkDepthClearanceMet(const SimulationState& state);
+    static bool checkLaunchTubeIntegrity(const SimulationState& state);
+    static bool checkPayloadSystemOperational(const SimulationState& state);
+    static bool checkPowerSupplyStable(const SimulationState& state);
+    static bool checkNoFriendlyUnitsInBlastRadius(const SimulationState& state);
+    static bool checkLaunchConditionsFavorable(const SimulationState& state);
     
 private:
     CurrentLaunchPhase currentPhase;

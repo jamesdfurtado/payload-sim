@@ -128,3 +128,36 @@ void LaunchSequenceHandler::clearAuthCode() {
     authCode.clear();
     std::cout << "[LaunchSequenceHandler] Authorization code cleared externally" << std::endl;
 }
+
+// Static methods to check boolean flags from SimulationState
+bool LaunchSequenceHandler::checkTargetValidated(const SimulationState& state) {
+    return state.targetValidated;
+}
+
+bool LaunchSequenceHandler::checkTargetAcquired(const SimulationState& state) {
+    return state.targetAcquired;
+}
+
+bool LaunchSequenceHandler::checkDepthClearanceMet(const SimulationState& state) {
+    return state.depthClearanceMet;
+}
+
+bool LaunchSequenceHandler::checkLaunchTubeIntegrity(const SimulationState& state) {
+    return state.launchTubeIntegrity;
+}
+
+bool LaunchSequenceHandler::checkPayloadSystemOperational(const SimulationState& state) {
+    return state.payloadSystemOperational;
+}
+
+bool LaunchSequenceHandler::checkPowerSupplyStable(const SimulationState& state) {
+    return state.powerSupplyStable;
+}
+
+bool LaunchSequenceHandler::checkNoFriendlyUnitsInBlastRadius(const SimulationState& state) {
+    return state.noFriendlyUnitsInBlastRadius;
+}
+
+bool LaunchSequenceHandler::checkLaunchConditionsFavorable(const SimulationState& state) {
+    return state.launchConditionsFavorable;
+}
