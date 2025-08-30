@@ -41,15 +41,7 @@ static PhaseSurveillance authorizedSurveillance = []() {
 }();
 
 CheckAuthorizationStatus AuthorizedPhase::canStayAuthorized(const SimulationState& state) {
-    // Debug logging to see actual values
-    std::cout << "[AuthorizedPhase] Debug - targetValidated: " << state.targetValidated 
-              << ", targetAcquired: " << state.targetAcquired 
-              << ", depthClearanceMet: " << state.depthClearanceMet
-              << ", launchTubeIntegrity: " << state.launchTubeIntegrity
-              << ", powerSupplyStable: " << state.powerSupplyStable
-              << ", noFriendlyUnitsInBlastRadius: " << state.noFriendlyUnitsInBlastRadius
-              << ", launchConditionsFavorable: " << state.launchConditionsFavorable << std::endl;
-    
     // Use the modular surveillance system to check all conditions
+    // Debug logging removed to prevent spam - only log when conditions actually fail
     return authorizedSurveillance.checkConditions(state);
 }

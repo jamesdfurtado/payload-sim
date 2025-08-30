@@ -45,16 +45,7 @@ static PhaseSurveillance armedSurveillance = []() {
 }();
 
 CheckAuthorizationStatus ArmedPhase::canStayArmed(const SimulationState& state) {
-    // Debug logging to see actual values of surveillance conditions
-    std::cout << "[ArmedPhase] Debug - targetValidated: " << state.targetValidated 
-              << ", targetAcquired: " << state.targetAcquired 
-              << ", depthClearanceMet: " << state.depthClearanceMet
-              << ", launchTubeIntegrity: " << state.launchTubeIntegrity
-              << ", powerSupplyStable: " << state.powerSupplyStable
-              << ", noFriendlyUnitsInBlastRadius: " << state.noFriendlyUnitsInBlastRadius
-              << ", launchConditionsFavorable: " << state.launchConditionsFavorable
-              << ", payloadSystemOperational: " << state.payloadSystemOperational << std::endl;
-    
     // Use the modular surveillance system to check surveillance conditions
+    // Debug logging removed to prevent spam - only log when conditions actually fail
     return armedSurveillance.checkConditions(state);
 }
