@@ -14,6 +14,10 @@ public:
             if (onChange) onChange(isOn);
         }
     }
+    
+    void setStateQuiet(bool state) {
+        isOn = state; // Set state without triggering callback
+    }
     bool getState() const { return isOn; }
     void setOnChange(std::function<void(bool)> fn) { onChange = std::move(fn); }
 

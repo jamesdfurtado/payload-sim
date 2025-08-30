@@ -19,6 +19,14 @@ public:
         });
     }
 
+    void update(float dt) override {
+        // Synchronize switch state with PowerSystem state
+        bool powerSystemState = (power.getPowerLevel() > 0.5f);
+        if (weaponsSwitch->getState() != powerSystemState) {
+            weaponsSwitch->setStateQuiet(powerSystemState); // Update without triggering callback
+        }
+    }
+
     void draw() const override {
         const auto& s = engine.getState();
         
