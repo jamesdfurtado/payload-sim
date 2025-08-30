@@ -1,13 +1,15 @@
 #include "LaunchSequenceHandler.h"
 #include "IdlePhase.h"
 #include "AuthorizedPhase.h"
+#include "ArmingPhase.h"
+#include "ArmedPhase.h"
 #include "ResettingPhase.h"
 #include "../../SimulationEngine.h"
 #include <iostream>
 #include <string>
 
 LaunchSequenceHandler::LaunchSequenceHandler(SimulationEngine& engine) 
-    : engine(engine), currentPhase(CurrentLaunchPhase::Idle), authCode(""), resetTimer(0.0f) {
+    : engine(engine), currentPhase(CurrentLaunchPhase::Idle), authCode(""), resetTimer(0.0f), armingTimer(0.0f) {
 }
 
 LaunchSequenceHandler::~LaunchSequenceHandler() {
@@ -84,9 +86,10 @@ void LaunchSequenceHandler::requestArm() {
     std::cout << "[LaunchSequenceHandler] Arm requested" << std::endl;
     if (currentPhase == CurrentLaunchPhase::Authorized) {
         // TODO: Implement arm validation logic
-        // if that succeeds, change the phase to Armed
-        currentPhase = CurrentLaunchPhase::Armed;
-        std::cout << "[LaunchSequenceHandler] Phase changed to: Armed" << std::endl;
+        // if that succeeds, change the phase to Arming
+        currentPhase = CurrentLaunchPhase::Arming;
+        armingTimer = 0.0f;
+        std::cout << "[LaunchSequenceHandler] Phase changed to: Arming" << std::endl;
     }
 }
 
@@ -106,6 +109,8 @@ void LaunchSequenceHandler::requestReset() {
         currentPhase = CurrentLaunchPhase::Resetting;
         resetTimer = 0.0f;
         engine.getState().canLaunchAuthorized = false;
+        // Reset payload system operational flag when manually resetting
+        engine.getState().payloadSystemOperational = false;
         // Clear any pending authorization code
         authCode.clear();
     }
@@ -119,6 +124,7 @@ const char* LaunchSequenceHandler::getCurrentPhaseString() const {
     switch (currentPhase) {
         case CurrentLaunchPhase::Idle: return "Idle";
         case CurrentLaunchPhase::Authorized: return "Authorized";
+        case CurrentLaunchPhase::Arming: return "Arming";
         case CurrentLaunchPhase::Armed: return "Armed";
         case CurrentLaunchPhase::Launched: return "Launched";
         case CurrentLaunchPhase::Resetting: return "Resetting";
@@ -145,6 +151,21 @@ const char* LaunchSequenceHandler::getName() const {
 }
 
 void LaunchSequenceHandler::update(SimulationState& state, float dt) {
+    // Handle arming state timing
+    if (currentPhase == CurrentLaunchPhase::Arming) {
+        armingTimer += dt;
+        
+        if (ArmingPhase::isArmingComplete(armingTimer)) {
+            // Arming complete, transition to Armed
+            currentPhase = CurrentLaunchPhase::Armed;
+            armingTimer = 0.0f;
+            // Set payload system operational flag to true when entering Armed state
+            state.payloadSystemOperational = true;
+            std::cout << "[LaunchSequenceHandler] Arming complete, now in Armed state" << std::endl;
+        }
+        return; // Don't process other logic while arming
+    }
+    
     // Handle reset state timing
     if (currentPhase == CurrentLaunchPhase::Resetting) {
         resetTimer += dt;
@@ -154,6 +175,8 @@ void LaunchSequenceHandler::update(SimulationState& state, float dt) {
             currentPhase = CurrentLaunchPhase::Idle;
             resetTimer = 0.0f;
             state.canLaunchAuthorized = false;
+            // Reset payload system operational flag when leaving Armed state
+            state.payloadSystemOperational = false;
             std::cout << "[LaunchSequenceHandler] Reset complete, now in Idle state" << std::endl;
         }
         return; // Don't process other logic while resetting
@@ -168,6 +191,22 @@ void LaunchSequenceHandler::update(SimulationState& state, float dt) {
             std::cout << "[LaunchSequenceHandler] Authorization conditions failed during monitoring: " 
                       << authStatus.message << std::endl;
             std::cout << "[LaunchSequenceHandler] Transitioning to reset phase due to condition failure" << std::endl;
+            
+            currentPhase = CurrentLaunchPhase::Resetting;
+            resetTimer = 0.0f;
+            state.canLaunchAuthorized = false;
+        }
+    }
+    
+    // Continuous monitoring: if we're in Armed phase, check if we can stay armed
+    if (currentPhase == CurrentLaunchPhase::Armed) {
+        CheckAuthorizationStatus armedStatus = ArmedPhase::canStayArmed(state);
+        
+        if (!armedStatus.isAuthorized) {
+            // Conditions failed - transition to resetting phase
+            std::cout << "[LaunchSequenceHandler] Armed conditions failed during monitoring: " 
+                      << armedStatus.message << std::endl;
+            std::cout << "[LaunchSequenceHandler] Transitioning to reset phase due to armed condition failure" << std::endl;
             
             currentPhase = CurrentLaunchPhase::Resetting;
             resetTimer = 0.0f;

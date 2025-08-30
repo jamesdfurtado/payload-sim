@@ -55,4 +55,5 @@ private:
     SimulationEngine& engine;
     std::string authCode; // Stores the generated 4-digit authorization code
     float resetTimer; // Timer for reset state
+    float armingTimer; // Timer for arming state
 };
