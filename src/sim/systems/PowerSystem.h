@@ -33,7 +33,7 @@ private:
     float batteryLevel = 100.0f; // Battery percentage (0.0f - 100.0f)
     
     // Battery drain/charge rates (percentage per second)
-    const float batteryDrainRate = 8.0f;   // Reduced from 20% to 8% per second when power is ON
+    const float batteryDrainRate = 4.0f;   // Reduced from 8% to 4% per second when power is ON (halved again)
     const float batteryChargeRate = 15.0f; // 15% per second when power is OFF
 };
 
