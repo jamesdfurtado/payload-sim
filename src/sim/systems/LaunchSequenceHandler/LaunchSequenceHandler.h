@@ -8,10 +8,12 @@
 #include <string>
 
 class SimulationEngine; // forward declaration
+class MissileSystem; // forward declaration
 
 class LaunchSequenceHandler : public ISystem {
 public:
     explicit LaunchSequenceHandler(SimulationEngine& engine);
+    void setMissileSystem(MissileSystem* missileSystem) { this->missileSystem = missileSystem; }
     ~LaunchSequenceHandler();
 
     // Request functions for UI button presses
@@ -53,6 +55,7 @@ public:
 private:
     CurrentLaunchPhase currentPhase;
     SimulationEngine& engine;
+    MissileSystem* missileSystem = nullptr;
     std::string authCode; // Stores the generated 4-digit authorization code
     float resetTimer; // Timer for reset state
     float armingTimer; // Timer for arming state

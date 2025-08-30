@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 struct SimulationState {
     // Core flags used across systems
     bool targetValidated = false;
@@ -13,6 +15,13 @@ struct SimulationState {
 
     // Derived flags
     bool canLaunchAuthorized = false;
+
+    // Missile system state
+    bool missileLaunched = false;
+    bool missileActive = false;
+    bool explosionActive = false;
+    uint32_t missileTargetId = 0;
+    float explosionTimer = 0.0f;
 
     // Continuous state values managed by systems
     float currentDepthMeters;    // Managed by DepthSystem

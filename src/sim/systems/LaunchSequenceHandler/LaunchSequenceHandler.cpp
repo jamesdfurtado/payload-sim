@@ -178,6 +178,13 @@ void LaunchSequenceHandler::update(SimulationState& state, float dt) {
             currentPhase = CurrentLaunchPhase::Launched;
             launchingTimer = 0.0f;
             launchedTimer = 0.0f; // Reset launched timer
+            
+            // Trigger missile launch
+            if (missileSystem) {
+                state.missileLaunched = true;
+                std::cout << "[LaunchSequenceHandler] Missile launch triggered" << std::endl;
+            }
+            
             std::cout << "[LaunchSequenceHandler] Launching complete, now in Launched state" << std::endl;
         }
         return; // Don't process other logic while launching

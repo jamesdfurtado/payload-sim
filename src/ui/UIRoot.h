@@ -12,7 +12,9 @@
 #include "../sim/systems/EnvironmentSystem.h"
 #include "../sim/world/ContactManager.h"
 #include "../sim/world/CrosshairManager.h"
+#include "../sim/world/MissileManager.h"
 #include "ui/views/SonarView.h"
+#include "ui/views/MissileView.h"
 #include "ui/views/StatusPanel.h"
 #include "ui/views/ControlPanel/ControlPanel.h"
 #include "ui/views/ContactView.h"
@@ -30,8 +32,9 @@ public:
            LaunchSequenceHandler* launchSequence,
            EnvironmentSystem* /*environment*/,
            ContactManager* contacts,
-           CrosshairManager* crosshair)
-        : engine(engine), sonar(sonar), power(power), depth(depth), targeting(targeting), launchSequence(launchSequence), contacts(contacts), crosshairManager(crosshair) {
+           CrosshairManager* crosshair,
+           MissileManager* missiles)
+        : engine(engine), sonar(sonar), power(power), depth(depth), targeting(targeting), launchSequence(launchSequence), contacts(contacts), crosshairManager(crosshair), missileManager(missiles) {
 
         sonarView = std::make_unique<SonarView>(*contacts);
         statusPanel = std::make_unique<StatusPanel>(engine);
@@ -40,6 +43,7 @@ public:
         controlPanel = std::make_unique<ControlPanel>(engine, launchSequence);
         contactView = std::make_unique<ContactView>(*contacts);
         crosshairView = std::make_unique<CrosshairView>(*crosshairManager);
+        missileView = std::make_unique<MissileView>(*missiles);
 
         // Simple layout (manual rects to keep lean)
         sonarView->setBounds({20, 120, 600, 580});
@@ -90,6 +94,9 @@ public:
         // Then overlay contacts on top of the sonar display
         contactView->drawContactsOnSonar(sonarView->getBounds());
         
+        // Overlay missiles and explosions
+        missileView->drawMissilesOnSonar(sonarView->getBounds());
+        
         // Finally overlay crosshair and selection circle
         crosshairView->drawOnSonar(sonarView->getBounds());
         
@@ -98,6 +105,7 @@ public:
 
 private:
     SimulationEngine& engine;
+    MissileManager* missileManager;
     SonarSystem* sonar;
     PowerSystem* power;
     DepthSystem* depth;
@@ -113,6 +121,7 @@ private:
     std::unique_ptr<ContactView> contactView;
     CrosshairManager* crosshairManager;
     std::unique_ptr<CrosshairView> crosshairView;
+    std::unique_ptr<MissileView> missileView;
 
 };
 

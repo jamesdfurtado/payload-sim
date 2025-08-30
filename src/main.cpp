@@ -10,8 +10,10 @@
 #include "sim/systems/TargetAcquisitionSystem.h"
 #include "sim/systems/TargetValidationSystem.h"
 #include "sim/systems/FriendlySafetySystem.h"
+#include "sim/systems/MissileSystem.h"
 
 #include "sim/world/ContactManager.h"
+#include "sim/world/MissileManager.h"
 #include "sim/world/CrosshairManager.h"
 #include "ui/UIRoot.h"
 
@@ -25,6 +27,7 @@ int main() {
     // Simulation core
     SimulationEngine engine;
     auto contacts = std::make_shared<ContactManager>();
+    auto missiles = std::make_shared<MissileManager>();
     auto power = std::make_shared<PowerSystem>();
     auto depth = std::make_shared<DepthSystem>();
     auto sonar = std::make_shared<SonarSystem>(*contacts);
@@ -35,6 +38,7 @@ int main() {
     auto targetAcquisition = std::make_shared<TargetAcquisitionSystem>(*crosshairManager, *contacts);
     auto targetValidation = std::make_shared<TargetValidationSystem>(*crosshairManager, *contacts);
     auto friendlySafety = std::make_shared<FriendlySafetySystem>(*crosshairManager, *contacts);
+    auto missileSystem = std::make_shared<MissileSystem>(*missiles, *contacts, *crosshairManager);
 
 
     engine.registerSystem(power);
@@ -46,9 +50,13 @@ int main() {
     engine.registerSystem(targetAcquisition);
     engine.registerSystem(targetValidation);
     engine.registerSystem(friendlySafety);
+    engine.registerSystem(missileSystem);
 
+    // Connect missile system to launch sequence handler
+    launchSequence->setMissileSystem(missileSystem.get());
+    
     // UI root with direct pointers to systems/state
-    UIRoot ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), launchSequence.get(), environment.get(), contacts.get(), crosshairManager.get());
+    UIRoot ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), launchSequence.get(), environment.get(), contacts.get(), crosshairManager.get(), missiles.get());
 
     while (!WindowShouldClose()) {
         const float dt = GetFrameTime();
