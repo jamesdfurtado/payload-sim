@@ -22,11 +22,19 @@ public:
             Vector2 screen = worldToScreen(missile.position, sonarBounds);
             DrawCircle((int)screen.x, (int)screen.y, 3, YELLOW);
             
-            // Draw missile trail
-            Vector2 trailEnd = { missile.position.x - missile.velocity.x * 0.1f, 
-                                missile.position.y - missile.velocity.y * 0.1f };
-            Vector2 trailScreen = worldToScreen(trailEnd, sonarBounds);
-            DrawLineEx(screen, trailScreen, 2, Fade(YELLOW, 0.6f));
+            // Draw missile trail (actual path taken)
+            if (missile.trailPoints.size() > 1) {
+                for (size_t i = 1; i < missile.trailPoints.size(); ++i) {
+                    Vector2 start = worldToScreen(missile.trailPoints[i-1], sonarBounds);
+                    Vector2 end = worldToScreen(missile.trailPoints[i], sonarBounds);
+                    
+                    // Fade trail - older segments are more transparent
+                    float fadeRatio = (float)i / (float)missile.trailPoints.size();
+                    float alpha = 0.3f + (fadeRatio * 0.4f); // Range from 0.3 to 0.7
+                    
+                    DrawLineEx(start, end, 2, Fade(GRAY, alpha));
+                }
+            }
         }
         
         // Draw explosions

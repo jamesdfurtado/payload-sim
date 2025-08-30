@@ -6,6 +6,7 @@
 #include "LaunchingPhase.h"
 #include "ResettingPhase.h"
 #include "../../SimulationEngine.h"
+#include "../PowerSystem.h"
 #include <iostream>
 #include <string>
 
@@ -115,6 +116,11 @@ void LaunchSequenceHandler::requestReset() {
         engine.getState().payloadSystemOperational = false;
         // Clear any pending authorization code
         authCode.clear();
+        // Turn off power switch during reset
+        if (powerSystem) {
+            powerSystem->setPowerState(false);
+            std::cout << "[LaunchSequenceHandler] Power switch turned OFF during reset" << std::endl;
+        }
     }
 }
 
@@ -217,6 +223,11 @@ void LaunchSequenceHandler::update(SimulationState& state, float dt) {
             state.canLaunchAuthorized = false;
             // Reset payload system operational flag when leaving Armed state
             state.payloadSystemOperational = false;
+            // Turn off power switch when transitioning to Idle (also handles auto-reset)
+            if (powerSystem) {
+                powerSystem->setPowerState(false);
+                std::cout << "[LaunchSequenceHandler] Power switch turned OFF when entering Idle state" << std::endl;
+            }
             std::cout << "[LaunchSequenceHandler] Reset complete, now in Idle state" << std::endl;
         }
         return; // Don't process other logic while resetting

@@ -13,6 +13,10 @@ struct Missile {
     float maxTurnRate;
     float lifetime;
     bool active;
+    
+    // Trail data - stores recent positions to create a path trail
+    std::vector<Vector2> trailPoints;
+    static constexpr float MAX_TRAIL_LENGTH = 60.0f;  // Maximum trail length in world units
 };
 
 struct Explosion {

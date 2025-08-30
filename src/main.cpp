@@ -52,8 +52,9 @@ int main() {
     engine.registerSystem(friendlySafety);
     engine.registerSystem(missileSystem);
 
-    // Connect missile system to launch sequence handler
+    // Connect missile system and power system to launch sequence handler
     launchSequence->setMissileSystem(missileSystem.get());
+    launchSequence->setPowerSystem(power.get());
     
     // UI root with direct pointers to systems/state
     UIRoot ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), launchSequence.get(), environment.get(), contacts.get(), crosshairManager.get(), missiles.get());

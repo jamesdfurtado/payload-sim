@@ -25,6 +25,10 @@ uint32_t MissileManager::launchMissile(Vector2 startPosition, uint32_t targetId)
     float randomAngle = ((float)GetRandomValue(0, 1000) / 1000.0f) * 2.0f * PI;
     missile.velocity = { cosf(randomAngle) * missile.speed, sinf(randomAngle) * missile.speed };
     
+    // Initialize trail with starting position
+    missile.trailPoints.clear();
+    missile.trailPoints.push_back(missile.position);
+    
     activeMissiles.push_back(missile);
     return missile.id;
 }
@@ -87,8 +91,17 @@ void MissileManager::updateMissilePhysics(float dt, const std::vector<Vector2>& 
         }
         
         // Update position
+        Vector2 oldPosition = missile.position;
         missile.position.x += missile.velocity.x * dt;
         missile.position.y += missile.velocity.y * dt;
+        
+        // Update trail - add new position every frame to create smooth trail
+        missile.trailPoints.push_back(missile.position);
+        
+        // Maintain trail length - keep only recent points
+        if (missile.trailPoints.size() > 20) { // Keep last 20 points for smooth trail
+            missile.trailPoints.erase(missile.trailPoints.begin());
+        }
         
         // Check if missile is out of bounds
         if (missile.position.x < -600 || missile.position.x > 600 || 
