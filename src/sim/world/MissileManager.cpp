@@ -110,7 +110,15 @@ void MissileManager::updateExplosions(float dt) {
         if (!explosion.active) continue;
         
         explosion.timer += dt;
-        explosion.radius = explosion.maxRadius * (explosion.timer / explosion.duration);
+        float progress = explosion.timer / explosion.duration;
+        
+        // Update rings with different speeds for staggered effect
+        explosion.innerRing = explosion.maxRingSize * std::min(1.0f, progress * 2.0f);     // Fast
+        explosion.middleRing = explosion.maxRingSize * std::min(1.0f, progress * 1.5f);    // Medium
+        explosion.outerRing = explosion.maxRingSize * progress;                            // Slow
+        
+        // Flash intensity: bright at start, fades quickly
+        explosion.flashIntensity = std::max(0.0f, 1.0f - progress * 3.0f);
         
         if (explosion.timer >= explosion.duration) {
             explosion.active = false;
@@ -158,11 +166,16 @@ void MissileManager::checkCollisions(const std::vector<Vector2>& contactPosition
 void MissileManager::createExplosion(Vector2 position) {
     Explosion explosion{};
     explosion.position = position;
-    explosion.radius = 5.0f;
-    explosion.maxRadius = 50.0f;
-    explosion.duration = 1.0f;  // 1 second explosion
+    explosion.duration = 1.5f;  // 1.5 second explosion
     explosion.timer = 0.0f;
     explosion.active = true;
+    
+    // Initialize ring data
+    explosion.innerRing = 0.0f;
+    explosion.middleRing = 0.0f;
+    explosion.outerRing = 0.0f;
+    explosion.flashIntensity = 1.0f;
+    explosion.maxRingSize = 60.0f;  // Larger explosion
     
     activeExplosions.push_back(explosion);
 }

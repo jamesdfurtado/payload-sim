@@ -17,11 +17,16 @@ struct Missile {
 
 struct Explosion {
     Vector2 position;
-    float radius;
-    float maxRadius;
     float duration;
     float timer;
     bool active;
+    
+    // Multi-ring explosion data
+    float innerRing;
+    float middleRing;
+    float outerRing;
+    float flashIntensity;
+    float maxRingSize;
 };
 
 class MissileManager {

@@ -32,20 +32,53 @@ public:
         // Draw explosions
         for (const auto& explosion : missileManager.getActiveExplosions()) {
             Vector2 screen = worldToScreen(explosion.position, sonarBounds);
-            float screenRadius = explosion.radius * (sonarBounds.width / 1200.0f);
+            float scale = sonarBounds.width / 1200.0f;
             
-            // Draw expanding explosion circle
-            DrawCircleLines((int)screen.x, (int)screen.y, (int)screenRadius, ORANGE);
-            DrawCircle((int)screen.x, (int)screen.y, (int)(screenRadius * 0.7f), Fade(ORANGE, 0.3f));
+            int x = (int)screen.x;
+            int y = (int)screen.y;
             
-            // Draw explosion particles
-            for (int i = 0; i < 8; ++i) {
-                float angle = (float)i * PI / 4.0f;
-                float particleDist = screenRadius * 0.8f;
-                Vector2 particlePos = { screen.x + cosf(angle) * particleDist, 
-                                      screen.y + sinf(angle) * particleDist };
-                DrawCircle((int)particlePos.x, (int)particlePos.y, 2, RED);
+            // Calculate ring sizes in screen coordinates
+            int innerRadius = (int)(explosion.innerRing * scale);
+            int middleRadius = (int)(explosion.middleRing * scale);
+            int outerRadius = (int)(explosion.outerRing * scale);
+            
+            // Calculate color intensities based on time
+            float progress = explosion.timer / explosion.duration;
+            float pulseIntensity = 0.5f + 0.5f * sinf(progress * 10.0f); // Pulsing effect
+            
+            // Initial bright flash (only at the very beginning)
+            if (explosion.flashIntensity > 0.8f) {
+                DrawCircle(x, y, (int)(20 * scale), Fade(WHITE, explosion.flashIntensity));
             }
+            
+            // Outer ring - red, appears last
+            if (outerRadius > 5) {
+                Color outerColor = {255, 100, 50, (unsigned char)(255 * (1.0f - progress) * pulseIntensity)};
+                DrawCircleLines(x, y, outerRadius, outerColor);
+                DrawCircleLines(x, y, outerRadius - 1, Fade(outerColor, 0.5f));
+            }
+            
+            // Middle ring - orange, appears second
+            if (middleRadius > 3) {
+                Color middleColor = {255, 150, 50, (unsigned char)(255 * (1.2f - progress) * pulseIntensity)};
+                DrawCircleLines(x, y, middleRadius, middleColor);
+                DrawCircleLines(x, y, middleRadius - 1, Fade(middleColor, 0.7f));
+                DrawCircleLines(x, y, middleRadius + 1, Fade(middleColor, 0.3f));
+            }
+            
+            // Inner ring - bright yellow/white, appears first
+            if (innerRadius > 1) {
+                Color innerColor = {255, 255, 150, (unsigned char)(255 * (1.5f - progress) * pulseIntensity)};
+                DrawCircleLines(x, y, innerRadius, innerColor);
+                DrawCircleLines(x, y, innerRadius - 1, Fade(innerColor, 0.8f));
+                DrawCircleLines(x, y, innerRadius + 1, Fade(innerColor, 0.5f));
+                DrawCircleLines(x, y, innerRadius + 2, Fade(innerColor, 0.2f));
+            }
+            
+            // Central core - always bright while explosion is active
+            Color coreColor = {255, 255, 200, (unsigned char)(255 * (1.0f - progress * 0.7f) * pulseIntensity)};
+            DrawCircle(x, y, (int)(8 * scale), Fade(coreColor, 0.6f));
+            DrawCircle(x, y, (int)(4 * scale), coreColor);
         }
     }
 
