@@ -4,6 +4,7 @@
 #include "../world/CrosshairManager.h"
 #include "../world/ContactManager.h"
 #include <algorithm>
+#include <iostream>
 
 class TargetValidationSystem : public ISystem {
 public:
@@ -14,10 +15,11 @@ public:
     
     void update(SimulationState& state, float dt) override {
         // Single responsibility: Only manage targetValidated flag
+        // Only check for state changes when something actually happens
+        
         if (state.targetAcquired) {
             uint32_t trackedId = crosshairManager.getTrackedContactId();
             
-            // Check if the tracked contact still exists
             if (contactManager.isContactAlive(trackedId)) {
                 // Find the tracked contact to check its type
                 const auto& contacts = contactManager.getActiveContacts();
@@ -26,17 +28,32 @@ public:
                 
                 if (it != contacts.end()) {
                     // Target is validated only if it's an enemy submarine
-                    state.targetValidated = (it->type == ContactType::EnemySub);
-                } else {
+                    bool newValidation = (it->type == ContactType::EnemySub);
+                    
+                    if (newValidation != state.targetValidated) {
+                        if (newValidation) {
+                            std::cout << "[TargetValidationSystem] targetValidated changed from false to true" << std::endl;
+                        } else {
+                            std::cout << "[TargetValidationSystem] targetValidated changed from true to false" << std::endl;
+                        }
+                        state.targetValidated = newValidation;
+                    }
+                } else if (state.targetValidated) {
+                    // Contact not found but still validated - clear it
+                    std::cout << "[TargetValidationSystem] targetValidated changed from true to false (contact not found)" << std::endl;
                     state.targetValidated = false;
                 }
-            } else {
+            } else if (state.targetValidated) {
+                // Contact not alive but still validated - clear it
+                std::cout << "[TargetValidationSystem] targetValidated changed from true to false (contact not alive)" << std::endl;
                 state.targetValidated = false;
             }
-        } else {
-            // No target acquired, clear validation
+        } else if (state.targetValidated) {
+            // No target acquired but still validated - clear it
+            std::cout << "[TargetValidationSystem] targetValidated changed from true to false (no target acquired)" << std::endl;
             state.targetValidated = false;
         }
+        // If no target acquired and not validated, no change needed
     }
 
 private:

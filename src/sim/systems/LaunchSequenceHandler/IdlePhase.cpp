@@ -1,4 +1,5 @@
 #include "IdlePhase.h"
+#include "LaunchSequenceHandler.h"
 #include "../../SimulationState.h"
 #include <random>
 #include <sstream>
@@ -12,13 +13,13 @@ AuthorizationResult IdlePhase::canAuthorize(const SimulationState& state) {
     };
     
     static const Condition conditions[] = {
-        {checkTargetValidated, "Target not validated. "},
-        {checkTargetAcquired, "Target not acquired. "},
-        {checkDepthClearanceMet, "Depth clearance not met. "},
-        {checkLaunchTubeIntegrity, "Launch tube integrity compromised. "},
-        {checkPowerSupplyStable, "Power supply unstable. "},
-        {checkNoFriendlyUnitsInBlastRadius, "Friendly units in blast radius. "},
-        {checkLaunchConditionsFavorable, "Launch conditions unfavorable. "}
+        {LaunchSequenceHandler::checkTargetValidated, "Target not validated. "},
+        {LaunchSequenceHandler::checkTargetAcquired, "Target not acquired. "},
+        {LaunchSequenceHandler::checkDepthClearanceMet, "Depth clearance not met. "},
+        {LaunchSequenceHandler::checkLaunchTubeIntegrity, "Launch tube integrity compromised. "},
+        {LaunchSequenceHandler::checkPowerSupplyStable, "Power supply unstable. "},
+        {LaunchSequenceHandler::checkNoFriendlyUnitsInBlastRadius, "Friendly units in blast radius. "},
+        {LaunchSequenceHandler::checkLaunchConditionsFavorable, "Launch conditions unfavorable. "}
     };
     
     // Check all conditions
@@ -37,34 +38,6 @@ AuthorizationResult IdlePhase::canAuthorize(const SimulationState& state) {
     }
     
     return AuthorizationResult(canAuth, message);
-}
-
-bool IdlePhase::checkTargetValidated(const SimulationState& state) {
-    return state.targetValidated;
-}
-
-bool IdlePhase::checkTargetAcquired(const SimulationState& state) {
-    return state.targetAcquired;
-}
-
-bool IdlePhase::checkDepthClearanceMet(const SimulationState& state) {
-    return state.depthClearanceMet;
-}
-
-bool IdlePhase::checkLaunchTubeIntegrity(const SimulationState& state) {
-    return state.launchTubeIntegrity;
-}
-
-bool IdlePhase::checkPowerSupplyStable(const SimulationState& state) {
-    return state.powerSupplyStable;
-}
-
-bool IdlePhase::checkNoFriendlyUnitsInBlastRadius(const SimulationState& state) {
-    return state.noFriendlyUnitsInBlastRadius;
-}
-
-bool IdlePhase::checkLaunchConditionsFavorable(const SimulationState& state) {
-    return state.launchConditionsFavorable;
 }
 
 std::string IdlePhase::createCode() {

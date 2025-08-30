@@ -1,5 +1,6 @@
 #include "LaunchSequenceHandler.h"
 #include "IdlePhase.h"
+#include "AuthorizedPhase.h"
 #include "../../SimulationEngine.h"
 #include <iostream>
 #include <string>
@@ -127,4 +128,59 @@ bool LaunchSequenceHandler::isAuthorizationPending() const {
 void LaunchSequenceHandler::clearAuthCode() {
     authCode.clear();
     std::cout << "[LaunchSequenceHandler] Authorization code cleared externally" << std::endl;
+}
+
+// ISystem interface implementation
+const char* LaunchSequenceHandler::getName() const {
+    return "LaunchSequenceHandler";
+}
+
+void LaunchSequenceHandler::update(SimulationState& state, float dt) {
+    // Continuous monitoring: if we're in Authorized phase, check if we can stay authorized
+    if (currentPhase == CurrentLaunchPhase::Authorized) {
+        CheckAuthorizationStatus authStatus = AuthorizedPhase::canStayAuthorized(state);
+        
+        if (!authStatus.isAuthorized) {
+            // Conditions failed - reset to idle phase
+            std::cout << "[LaunchSequenceHandler] Authorization conditions failed during monitoring: " 
+                      << authStatus.message << std::endl;
+            std::cout << "[LaunchSequenceHandler] Resetting to idle phase due to condition failure" << std::endl;
+            
+            currentPhase = CurrentLaunchPhase::Idle;
+            state.canLaunchAuthorized = false;
+        }
+    }
+}
+
+// Static methods to check boolean flags from SimulationState
+bool LaunchSequenceHandler::checkTargetValidated(const SimulationState& state) {
+    return state.targetValidated;
+}
+
+bool LaunchSequenceHandler::checkTargetAcquired(const SimulationState& state) {
+    return state.targetAcquired;
+}
+
+bool LaunchSequenceHandler::checkDepthClearanceMet(const SimulationState& state) {
+    return state.depthClearanceMet;
+}
+
+bool LaunchSequenceHandler::checkLaunchTubeIntegrity(const SimulationState& state) {
+    return state.launchTubeIntegrity;
+}
+
+bool LaunchSequenceHandler::checkPayloadSystemOperational(const SimulationState& state) {
+    return state.payloadSystemOperational;
+}
+
+bool LaunchSequenceHandler::checkPowerSupplyStable(const SimulationState& state) {
+    return state.powerSupplyStable;
+}
+
+bool LaunchSequenceHandler::checkNoFriendlyUnitsInBlastRadius(const SimulationState& state) {
+    return state.noFriendlyUnitsInBlastRadius;
+}
+
+bool LaunchSequenceHandler::checkLaunchConditionsFavorable(const SimulationState& state) {
+    return state.launchConditionsFavorable;
 }

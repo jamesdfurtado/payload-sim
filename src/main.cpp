@@ -42,6 +42,7 @@ int main() {
     engine.registerSystem(sonar);
     engine.registerSystem(targeting);
     engine.registerSystem(environment);
+    engine.registerSystem(launchSequence);
     engine.registerSystem(targetAcquisition);
     engine.registerSystem(targetValidation);
     engine.registerSystem(friendlySafety);

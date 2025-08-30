@@ -1,8 +1,11 @@
 #pragma once
 
 #include "CurrentLaunchPhase.h"
-#include <string>
 #include "../../SimulationState.h"
+#include <string>
+
+// Forward declaration to avoid circular dependency
+class LaunchSequenceHandler;
 
 struct AuthorizationResult {
     bool canAuthorize;
@@ -19,14 +22,4 @@ public:
     
     // Generate a random 4-digit authorization code
     static std::string createCode();
-    
-private:
-    // Helper methods to check individual conditions
-    static bool checkTargetValidated(const SimulationState& state);
-    static bool checkTargetAcquired(const SimulationState& state);
-    static bool checkDepthClearanceMet(const SimulationState& state);
-    static bool checkLaunchTubeIntegrity(const SimulationState& state);
-    static bool checkPowerSupplyStable(const SimulationState& state);
-    static bool checkNoFriendlyUnitsInBlastRadius(const SimulationState& state);
-    static bool checkLaunchConditionsFavorable(const SimulationState& state);
 };
