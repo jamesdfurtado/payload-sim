@@ -21,6 +21,7 @@
 #include "ui/views/CrosshairView.h"
 #include "ui/views/PowerView.h"
 #include "ui/views/DepthView.h"
+#include "ui/views/GuidanceView.h"
 
 class UIRoot {
 public:
@@ -44,9 +45,11 @@ public:
         contactView = std::make_unique<ContactView>(*contacts);
         crosshairView = std::make_unique<CrosshairView>(*crosshairManager);
         missileView = std::make_unique<MissileView>(*missiles);
+        guidanceView = std::make_unique<GuidanceView>();
 
         // Simple layout (manual rects to keep lean)
-        sonarView->setBounds({20, 120, 600, 580});
+        guidanceView->setBounds({20, 60, 600, 70});  // Position above sonar view with more height
+        sonarView->setBounds({20, 140, 600, 560});  // Move down to accommodate taller guidance box
         statusPanel->setBounds({640, 20, 620, 110});
         powerView->setBounds({640, 140, 620, 100});
         depthView->setBounds({640, 250, 620, 100});
@@ -55,6 +58,7 @@ public:
 
     void update(float dt) {
         // Update all views
+        guidanceView->update(dt);
         powerView->update(dt);
         depthView->update(dt);
         controlPanel->update(dt);
@@ -83,6 +87,7 @@ public:
 
     void draw() const {
         DrawText("Submarine Payload Launch Control Simulator", 20, 20, 24, RAYWHITE);
+        guidanceView->draw();
         statusPanel->draw();
         powerView->draw();
         depthView->draw();
@@ -122,6 +127,7 @@ private:
     CrosshairManager* crosshairManager;
     std::unique_ptr<CrosshairView> crosshairView;
     std::unique_ptr<MissileView> missileView;
+    std::unique_ptr<GuidanceView> guidanceView;
 
 };
 
