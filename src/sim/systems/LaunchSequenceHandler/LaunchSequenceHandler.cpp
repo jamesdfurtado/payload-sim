@@ -1,12 +1,13 @@
 #include "LaunchSequenceHandler.h"
 #include "IdlePhase.h"
 #include "AuthorizedPhase.h"
+#include "ResettingPhase.h"
 #include "../../SimulationEngine.h"
 #include <iostream>
 #include <string>
 
 LaunchSequenceHandler::LaunchSequenceHandler(SimulationEngine& engine) 
-    : engine(engine), currentPhase(CurrentLaunchPhase::Idle), authCode("") {
+    : engine(engine), currentPhase(CurrentLaunchPhase::Idle), authCode(""), resetTimer(0.0f) {
 }
 
 LaunchSequenceHandler::~LaunchSequenceHandler() {
@@ -100,13 +101,14 @@ void LaunchSequenceHandler::requestLaunch() {
 }
 
 void LaunchSequenceHandler::requestReset() {
-    std::cout << "[LaunchSequenceHandler] Reset requested" << std::endl;
-    currentPhase = CurrentLaunchPhase::Idle;
-    // Reset the canLaunchAuthorized flag to false when returning to Idle
-    engine.getState().canLaunchAuthorized = false;
-    // Clear any pending authorization code
-    authCode.clear();
-    std::cout << "[LaunchSequenceHandler] Phase reset to: Idle, auth code cleared" << std::endl;
+    if (currentPhase != CurrentLaunchPhase::Idle) {
+        std::cout << "[LaunchSequenceHandler] Manual reset requested, transitioning to reset phase" << std::endl;
+        currentPhase = CurrentLaunchPhase::Resetting;
+        resetTimer = 0.0f;
+        engine.getState().canLaunchAuthorized = false;
+        // Clear any pending authorization code
+        authCode.clear();
+    }
 }
 
 CurrentLaunchPhase LaunchSequenceHandler::getCurrentPhase() const {
@@ -114,7 +116,14 @@ CurrentLaunchPhase LaunchSequenceHandler::getCurrentPhase() const {
 }
 
 const char* LaunchSequenceHandler::getCurrentPhaseString() const {
-    return ::getCurrentPhaseString(currentPhase);
+    switch (currentPhase) {
+        case CurrentLaunchPhase::Idle: return "Idle";
+        case CurrentLaunchPhase::Authorized: return "Authorized";
+        case CurrentLaunchPhase::Armed: return "Armed";
+        case CurrentLaunchPhase::Launched: return "Launched";
+        case CurrentLaunchPhase::Resetting: return "Resetting";
+        default: return "Unknown";
+    }
 }
 
 const std::string& LaunchSequenceHandler::getAuthCode() const {
@@ -136,17 +145,32 @@ const char* LaunchSequenceHandler::getName() const {
 }
 
 void LaunchSequenceHandler::update(SimulationState& state, float dt) {
+    // Handle reset state timing
+    if (currentPhase == CurrentLaunchPhase::Resetting) {
+        resetTimer += dt;
+        
+        if (ResettingPhase::isResetComplete(resetTimer)) {
+            // Reset complete, transition to Idle
+            currentPhase = CurrentLaunchPhase::Idle;
+            resetTimer = 0.0f;
+            state.canLaunchAuthorized = false;
+            std::cout << "[LaunchSequenceHandler] Reset complete, now in Idle state" << std::endl;
+        }
+        return; // Don't process other logic while resetting
+    }
+    
     // Continuous monitoring: if we're in Authorized phase, check if we can stay authorized
     if (currentPhase == CurrentLaunchPhase::Authorized) {
         CheckAuthorizationStatus authStatus = AuthorizedPhase::canStayAuthorized(state);
         
         if (!authStatus.isAuthorized) {
-            // Conditions failed - reset to idle phase
+            // Conditions failed - transition to resetting phase
             std::cout << "[LaunchSequenceHandler] Authorization conditions failed during monitoring: " 
                       << authStatus.message << std::endl;
-            std::cout << "[LaunchSequenceHandler] Resetting to idle phase due to condition failure" << std::endl;
+            std::cout << "[LaunchSequenceHandler] Transitioning to reset phase due to condition failure" << std::endl;
             
-            currentPhase = CurrentLaunchPhase::Idle;
+            currentPhase = CurrentLaunchPhase::Resetting;
+            resetTimer = 0.0f;
             state.canLaunchAuthorized = false;
         }
     }
