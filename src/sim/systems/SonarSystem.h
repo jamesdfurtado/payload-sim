@@ -22,7 +22,8 @@ public:
         if (selectedTargetId == 0) {
             selectedTargetId = contactManager.getNearestContactId({0,0});
         }
-        state.targetAcquired = (selectedTargetId != 0);
+        // Note: targetAcquired is now managed exclusively by TargetAcquisitionSystem
+        // to prevent race conditions and flickering
     }
 
     void attemptManualLock(const Vector2& worldPos) {
