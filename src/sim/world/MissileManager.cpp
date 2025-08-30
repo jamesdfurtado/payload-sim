@@ -16,7 +16,7 @@ uint32_t MissileManager::launchMissile(Vector2 startPosition, uint32_t targetId)
     missile.id = nextMissileId++;
     missile.position = startPosition;
     missile.targetId = targetId;
-    missile.speed = 80.0f;  // Fast missile speed
+    missile.speed = 160.0f;  // Very fast missile speed (doubled)
     missile.maxTurnRate = 3.0f;  // Radians per second turn rate
     missile.lifetime = 15.0f;  // 15 seconds max flight time
     missile.active = true;
