@@ -36,5 +36,3 @@ target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
 if(WIN32)
   target_compile_definitions(${PROJECT_NAME} PRIVATE _USE_MATH_DEFINES NOMINMAX)
 endif()
-
-
