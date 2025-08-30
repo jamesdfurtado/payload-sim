@@ -15,14 +15,14 @@ void MissileSystem::update(SimulationState& state, float dt) {
         // If no contact is being tracked (trackedContactId == 0), explode the missile
         if (trackedContactId == 0) {
             std::cout << "[MissileSystem] Target lost (trackedContactId == 0), exploding missile" << std::endl;
-            missileManager.clearAllMissiles();
+            missileManager.explodeAllMissiles();
             state.missileActive = false;
             state.missileTargetId = 0;
         }
         // If tracked contact is no longer alive, explode the missile
         else if (!contactManager.isContactAlive(trackedContactId)) {
             std::cout << "[MissileSystem] Tracked target no longer alive, exploding missile" << std::endl;
-            missileManager.clearAllMissiles();
+            missileManager.explodeAllMissiles();
             state.missileActive = false;
             state.missileTargetId = 0;
         }

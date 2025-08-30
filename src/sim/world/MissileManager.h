@@ -31,6 +31,7 @@ public:
     uint32_t launchMissile(Vector2 startPosition, uint32_t targetId);
     void removeMissile(uint32_t id);
     void clearAllMissiles();
+    void explodeAllMissiles();  // Creates explosions at missile positions before clearing
 
     const std::vector<Missile>& getActiveMissiles() const { return activeMissiles; }
     const std::vector<Explosion>& getActiveExplosions() const { return activeExplosions; }

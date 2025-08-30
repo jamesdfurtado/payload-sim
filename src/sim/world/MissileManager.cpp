@@ -42,6 +42,18 @@ void MissileManager::clearAllMissiles() {
     activeExplosions.clear();
 }
 
+void MissileManager::explodeAllMissiles() {
+    // Create explosions at each active missile position
+    for (const auto& missile : activeMissiles) {
+        if (missile.active) {
+            createExplosion(missile.position);
+        }
+    }
+    
+    // Clear all missiles after creating explosions
+    activeMissiles.clear();
+}
+
 bool MissileManager::isMissileActive(uint32_t id) const {
     for (const auto& missile : activeMissiles) {
         if (missile.id == id && missile.active) return true;
