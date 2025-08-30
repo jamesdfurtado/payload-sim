@@ -5,6 +5,7 @@ enum class CurrentLaunchPhase {
     Authorized,
     Arming,      // New transition state
     Armed,
+    Launching,   // New transition state
     Launched,
     Resetting  // New transition state
 };

@@ -3,13 +3,14 @@
 #include "AuthorizedPhase.h"
 #include "ArmingPhase.h"
 #include "ArmedPhase.h"
+#include "LaunchingPhase.h"
 #include "ResettingPhase.h"
 #include "../../SimulationEngine.h"
 #include <iostream>
 #include <string>
 
 LaunchSequenceHandler::LaunchSequenceHandler(SimulationEngine& engine) 
-    : engine(engine), currentPhase(CurrentLaunchPhase::Idle), authCode(""), resetTimer(0.0f), armingTimer(0.0f) {
+    : engine(engine), currentPhase(CurrentLaunchPhase::Idle), authCode(""), resetTimer(0.0f), armingTimer(0.0f), launchingTimer(0.0f), launchedTimer(0.0f) {
 }
 
 LaunchSequenceHandler::~LaunchSequenceHandler() {
@@ -97,9 +98,10 @@ void LaunchSequenceHandler::requestLaunch() {
     std::cout << "[LaunchSequenceHandler] Launch requested" << std::endl;
     if (currentPhase == CurrentLaunchPhase::Armed) {
         // TODO: Implement launch validation logic
-        // if that succeeds, change the phase to Launched
-        currentPhase = CurrentLaunchPhase::Launched;
-        std::cout << "[LaunchSequenceHandler] Phase changed to: Launched" << std::endl;
+        // if that succeeds, change the phase to Launching
+        currentPhase = CurrentLaunchPhase::Launching;
+        launchingTimer = 0.0f;
+        std::cout << "[LaunchSequenceHandler] Phase changed to: Launching" << std::endl;
     }
 }
 
@@ -126,6 +128,7 @@ const char* LaunchSequenceHandler::getCurrentPhaseString() const {
         case CurrentLaunchPhase::Authorized: return "Authorized";
         case CurrentLaunchPhase::Arming: return "Arming";
         case CurrentLaunchPhase::Armed: return "Armed";
+        case CurrentLaunchPhase::Launching: return "Launching";
         case CurrentLaunchPhase::Launched: return "Launched";
         case CurrentLaunchPhase::Resetting: return "Resetting";
         default: return "Unknown";
@@ -164,6 +167,36 @@ void LaunchSequenceHandler::update(SimulationState& state, float dt) {
             std::cout << "[LaunchSequenceHandler] Arming complete, now in Armed state" << std::endl;
         }
         return; // Don't process other logic while arming
+    }
+    
+    // Handle launching state timing
+    if (currentPhase == CurrentLaunchPhase::Launching) {
+        launchingTimer += dt;
+        
+        if (LaunchingPhase::isLaunchingComplete(launchingTimer)) {
+            // Launching complete, transition to Launched
+            currentPhase = CurrentLaunchPhase::Launched;
+            launchingTimer = 0.0f;
+            launchedTimer = 0.0f; // Reset launched timer
+            std::cout << "[LaunchSequenceHandler] Launching complete, now in Launched state" << std::endl;
+        }
+        return; // Don't process other logic while launching
+    }
+    
+    // Handle launched state timing (auto-reset after 2 seconds)
+    if (currentPhase == CurrentLaunchPhase::Launched) {
+        launchedTimer += dt;
+        
+        if (launchedTimer >= 2.0f) { // 2 seconds
+            // Launched state complete, transition to resetting
+            currentPhase = CurrentLaunchPhase::Resetting;
+            launchedTimer = 0.0f;
+            resetTimer = 0.0f;
+            // Clear payload system operational flag when leaving Launched state
+            state.payloadSystemOperational = false;
+            std::cout << "[LaunchSequenceHandler] Launched state complete, transitioning to reset phase" << std::endl;
+        }
+        return; // Don't process other logic while in launched state
     }
     
     // Handle reset state timing
