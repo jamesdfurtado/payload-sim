@@ -17,8 +17,6 @@ private:
     CrosshairManager& crosshairManager;
     ContactManager& contactManager;
     
-    // Blast radius should be larger than the crosshair selection radius
-    static constexpr float BLAST_RADIUS = 35.0f; // Larger than SELECTION_RADIUS (20.0f)
-    
+    static constexpr float BLAST_RADIUS = 35.0f;
     bool checkFriendlyUnitsInBlastRadius(Vector2 blastCenter) const;
 };
