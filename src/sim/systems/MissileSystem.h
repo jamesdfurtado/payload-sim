@@ -14,7 +14,7 @@ public:
     const char* getName() const override { return "MissileSystem"; }
     void update(SimulationState& state, float dt) override;
 
-    // Launch coordination
+    // handles missile launch logic
     void triggerLaunch(SimulationState& state);
     
 private:
