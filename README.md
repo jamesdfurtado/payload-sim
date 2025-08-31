@@ -9,4 +9,4 @@ This simulator recreates the complex environment of a submarine's payload launch
 I designed this project with strong object-oriented, systems engineering, and testing principles to simulate how a real defense contracting company may develop a project like this.
 
 ## Demo
-![Demo](docs/demo.GIF)
+![Demo](docs/demo.gif)
