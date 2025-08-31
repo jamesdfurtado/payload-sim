@@ -8,7 +8,6 @@ public:
     const char* getName() const override { return "TargetingSystem"; }
     void update(SimulationState& state, float /*dt*/) override {
         state.targetingStability = stability;
-        // Note: targetValidated is managed by TargetValidationSystem, not here
     }
 
     void adjustStability(float delta) { stability = std::clamp(stability + delta, 0.0f, 1.0f); }
