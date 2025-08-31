@@ -19,13 +19,14 @@ LaunchSequenceHandler::~LaunchSequenceHandler() {
 
 void LaunchSequenceHandler::requestAuthorization() {
     std::cout << "[LaunchSequenceHandler] Authorization requested" << std::endl;
+    
+    // only allow authorization if in idle phase
     if (currentPhase == CurrentLaunchPhase::Idle) {
-        // Check if we can authorize using IdlePhase validation with real state
         const auto& state = engine.getState();
         AuthorizationResult result = IdlePhase::canAuthorize(state);
         
         if (result.canAuthorize) {
-            // Generate authorization code and store it
+            // generate authorization code and store it
             authCode = IdlePhase::createCode();
             std::cout << "[LaunchSequenceHandler] Authorization conditions met. Generated code: " << authCode << std::endl;
             std::cout << "[LaunchSequenceHandler] " << result.message << std::endl;
@@ -48,37 +49,36 @@ void LaunchSequenceHandler::submitAuthorization(const std::string& inputCode) {
         return;
     }
     
+    // auth code must be generated before submitting
     if (authCode.empty()) {
         std::cout << "[LaunchSequenceHandler] No authorization code generated. Request authorization first." << std::endl;
-        // Ensure we're in a clean idle state
         engine.getState().canLaunchAuthorized = false;
         return;
     }
     
-    // Check if flags are still met (re-validate conditions)
+    // re-validate conditions before authorizing
     const auto& state = engine.getState();
     AuthorizationResult result = IdlePhase::canAuthorize(state);
     
+    // reset auth process if can't authorize
     if (!result.canAuthorize) {
         std::cout << "[LaunchSequenceHandler] Authorization conditions no longer met: " << result.message << std::endl;
-        authCode.clear(); // Clear the code since conditions changed
-        // Reset to idle phase (already there, but ensure state is clean)
+        authCode.clear();
         engine.getState().canLaunchAuthorized = false;
         std::cout << "[LaunchSequenceHandler] Returning to idle phase due to condition failure" << std::endl;
         return;
     }
     
-    // Check if the submitted code matches the generated code
+    // check submitted code matches generated code
     if (inputCode == authCode) {
         currentPhase = CurrentLaunchPhase::Authorized;
         engine.getState().canLaunchAuthorized = true;
-        authCode.clear(); // Clear the code after successful authorization
+        authCode.clear(); 
         std::cout << "[LaunchSequenceHandler] Code verified successfully. Phase changed to: Authorized" << std::endl;
     } else {
         std::cout << "[LaunchSequenceHandler] Code verification failed. Expected: " << authCode 
                   << ", Received: " << inputCode << std::endl;
-        authCode.clear(); // Clear the code after failed attempt
-        // Reset to idle phase after wrong code input
+        authCode.clear(); 
         engine.getState().canLaunchAuthorized = false;
         std::cout << "[LaunchSequenceHandler] Returning to idle phase due to wrong code input" << std::endl;
     }
@@ -86,9 +86,8 @@ void LaunchSequenceHandler::submitAuthorization(const std::string& inputCode) {
 
 void LaunchSequenceHandler::requestArm() {
     std::cout << "[LaunchSequenceHandler] Arm requested" << std::endl;
+
     if (currentPhase == CurrentLaunchPhase::Authorized) {
-        // TODO: Implement arm validation logic
-        // if that succeeds, change the phase to Arming
         currentPhase = CurrentLaunchPhase::Arming;
         armingTimer = 0.0f;
         std::cout << "[LaunchSequenceHandler] Phase changed to: Arming" << std::endl;
@@ -97,26 +96,23 @@ void LaunchSequenceHandler::requestArm() {
 
 void LaunchSequenceHandler::requestLaunch() {
     std::cout << "[LaunchSequenceHandler] Launch requested" << std::endl;
+
     if (currentPhase == CurrentLaunchPhase::Armed) {
-        // TODO: Implement launch validation logic
-        // if that succeeds, change the phase to Launching
         currentPhase = CurrentLaunchPhase::Launching;
         launchingTimer = 0.0f;
         std::cout << "[LaunchSequenceHandler] Phase changed to: Launching" << std::endl;
     }
 }
 
+// handle manual reset of launch sequence
 void LaunchSequenceHandler::requestReset() {
     if (currentPhase != CurrentLaunchPhase::Idle) {
         std::cout << "[LaunchSequenceHandler] Manual reset requested, transitioning to reset phase" << std::endl;
         currentPhase = CurrentLaunchPhase::Resetting;
         resetTimer = 0.0f;
         engine.getState().canLaunchAuthorized = false;
-        // Reset payload system operational flag when manually resetting
         engine.getState().payloadSystemOperational = false;
-        // Clear any pending authorization code
         authCode.clear();
-        // Turn off power switch during reset
         if (powerSystem) {
             powerSystem->setPowerState(false);
             std::cout << "[LaunchSequenceHandler] Power switch turned OFF during reset" << std::endl;
@@ -160,32 +156,29 @@ const char* LaunchSequenceHandler::getName() const {
 }
 
 void LaunchSequenceHandler::update(SimulationState& state, float dt) {
-    // Handle arming state timing
+    // arming state timing (2 seconds)
     if (currentPhase == CurrentLaunchPhase::Arming) {
         armingTimer += dt;
         
         if (ArmingPhase::isArmingComplete(armingTimer)) {
-            // Arming complete, transition to Armed
             currentPhase = CurrentLaunchPhase::Armed;
             armingTimer = 0.0f;
-            // Set payload system operational flag to true when entering Armed state
+
             state.payloadSystemOperational = true;
             std::cout << "[LaunchSequenceHandler] Arming complete, now in Armed state" << std::endl;
         }
-        return; // Don't process other logic while arming
+        return;
     }
     
-    // Handle launching state timing
+    // launching state timing (1 second)
     if (currentPhase == CurrentLaunchPhase::Launching) {
         launchingTimer += dt;
         
         if (LaunchingPhase::isLaunchingComplete(launchingTimer)) {
-            // Launching complete, transition to Launched
             currentPhase = CurrentLaunchPhase::Launched;
             launchingTimer = 0.0f;
-            launchedTimer = 0.0f; // Reset launched timer
+            launchedTimer = 0.0f;
             
-            // Trigger missile launch
             if (missileSystem) {
                 state.missileLaunched = true;
                 std::cout << "[LaunchSequenceHandler] Missile launch triggered" << std::endl;
@@ -193,52 +186,49 @@ void LaunchSequenceHandler::update(SimulationState& state, float dt) {
             
             std::cout << "[LaunchSequenceHandler] Launching complete, now in Launched state" << std::endl;
         }
-        return; // Don't process other logic while launching
+        return;
     }
     
-    // Handle launched state timing (auto-reset after 2 seconds)
+    // launched state timing (2 seconds)
     if (currentPhase == CurrentLaunchPhase::Launched) {
         launchedTimer += dt;
         
-        if (launchedTimer >= 2.0f) { // 2 seconds
-            // Launched state complete, transition to resetting
+        if (launchedTimer >= 2.0f) { 
+            // reset flow after launch
             currentPhase = CurrentLaunchPhase::Resetting;
             launchedTimer = 0.0f;
             resetTimer = 0.0f;
-            // Clear payload system operational flag when leaving Launched state
+
             state.payloadSystemOperational = false;
             std::cout << "[LaunchSequenceHandler] Launched state complete, transitioning to reset phase" << std::endl;
         }
-        return; // Don't process other logic while in launched state
+        return;
     }
     
-    // Handle reset state timing
+    // reset state timing (2 seconds)
     if (currentPhase == CurrentLaunchPhase::Resetting) {
         resetTimer += dt;
         
         if (ResettingPhase::isResetComplete(resetTimer)) {
-            // Reset complete, transition to Idle
+            // reset phase-->idle phase
             currentPhase = CurrentLaunchPhase::Idle;
             resetTimer = 0.0f;
             state.canLaunchAuthorized = false;
-            // Reset payload system operational flag when leaving Armed state
             state.payloadSystemOperational = false;
-            // Turn off power switch when transitioning to Idle (also handles auto-reset)
             if (powerSystem) {
                 powerSystem->setPowerState(false);
                 std::cout << "[LaunchSequenceHandler] Power switch turned OFF when entering Idle state" << std::endl;
             }
             std::cout << "[LaunchSequenceHandler] Reset complete, now in Idle state" << std::endl;
         }
-        return; // Don't process other logic while resetting
+        return;
     }
     
-    // Continuous monitoring: if we're in Authorized phase, check if we can stay authorized
+    // continuous authorization surveillance
     if (currentPhase == CurrentLaunchPhase::Authorized) {
         CheckAuthorizationStatus authStatus = AuthorizedPhase::canStayAuthorized(state);
         
         if (!authStatus.isAuthorized) {
-            // Conditions failed - transition to resetting phase
             std::cout << "[LaunchSequenceHandler] Authorization conditions failed during monitoring: " 
                       << authStatus.message << std::endl;
             std::cout << "[LaunchSequenceHandler] Transitioning to reset phase due to condition failure" << std::endl;
@@ -249,12 +239,11 @@ void LaunchSequenceHandler::update(SimulationState& state, float dt) {
         }
     }
     
-    // Continuous monitoring: if we're in Armed phase, check if we can stay armed
+    // continuous armed surveillance
     if (currentPhase == CurrentLaunchPhase::Armed) {
         CheckAuthorizationStatus armedStatus = ArmedPhase::canStayArmed(state);
         
         if (!armedStatus.isAuthorized) {
-            // Conditions failed - transition to resetting phase
             std::cout << "[LaunchSequenceHandler] Armed conditions failed during monitoring: " 
                       << armedStatus.message << std::endl;
             std::cout << "[LaunchSequenceHandler] Transitioning to reset phase due to armed condition failure" << std::endl;
@@ -266,7 +255,7 @@ void LaunchSequenceHandler::update(SimulationState& state, float dt) {
     }
 }
 
-// Static methods to check boolean flags from SimulationState
+// methods to check simulation state conditions
 bool LaunchSequenceHandler::checkTargetValidated(const SimulationState& state) {
     return state.targetValidated;
 }
