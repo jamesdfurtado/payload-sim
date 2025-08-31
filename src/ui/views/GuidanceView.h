@@ -2,13 +2,13 @@
 
 #include "../Widget.h"
 #include "../widgets/PulsatingBorder.h"
+#include "../../sim/world/MissionInstructionManager.h"
 #include <string>
 
 class GuidanceView : public Widget {
 public:
-    GuidanceView() {
-        // Initialize with empty guidance text for now
-        guidanceText = "";
+    GuidanceView(const MissionInstructionManager& manager) 
+        : missionManager(manager) {
         // Create pulsating border with stronger effect
         pulsatingBorder = PulsatingBorder(ORANGE, 3.0f, 0.3f, 1.0f, 2);
     }
@@ -29,15 +29,18 @@ public:
         
         DrawText(headerText, (int)headerX, (int)headerY, headerFontSize, YELLOW);
         
-        // Only draw guidance text if it's not empty
-        if (!guidanceText.empty()) {
-            int fontSize = 18;
-            Vector2 textSize = MeasureTextEx(GetFontDefault(), guidanceText.c_str(), fontSize, 1);
+        // Get current mission instruction and display it
+        MissionInstruction instruction = missionManager.getCurrentInstruction();
+        if (!instruction.instructionText.empty()) {
+            int fontSize = 16;
+            Vector2 textSize = MeasureTextEx(GetFontDefault(), instruction.instructionText.c_str(), fontSize, 1);
             
-            float textX = bounds.x + (bounds.width - textSize.x) / 2;
-            float textY = bounds.y + 25;  // Position below the label
+            float textX = bounds.x + 10;  // Left-aligned with header
+            float textY = bounds.y + 30;  // Position below the header
             
-            DrawText(guidanceText.c_str(), (int)textX, (int)textY, fontSize, WHITE);
+            // Use different colors based on completion status
+            Color textColor = instruction.isComplete ? GREEN : WHITE;
+            DrawText(instruction.instructionText.c_str(), (int)textX, (int)textY, fontSize, textColor);
         }
     }
     
@@ -45,15 +48,7 @@ public:
         pulsatingBorder.update(dt);
     }
     
-    void setGuidanceText(const std::string& text) {
-        guidanceText = text;
-    }
-    
-    const std::string& getGuidanceText() const {
-        return guidanceText;
-    }
-
 private:
-    std::string guidanceText;
+    const MissionInstructionManager& missionManager;
     PulsatingBorder pulsatingBorder;
 };

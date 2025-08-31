@@ -13,6 +13,7 @@
 #include "../sim/world/ContactManager.h"
 #include "../sim/world/CrosshairManager.h"
 #include "../sim/world/MissileManager.h"
+#include "../sim/world/MissionInstructionManager.h"
 #include "ui/views/SonarView.h"
 #include "ui/views/MissileView.h"
 #include "ui/views/StatusPanel.h"
@@ -22,6 +23,7 @@
 #include "ui/views/PowerView.h"
 #include "ui/views/DepthView.h"
 #include "ui/views/GuidanceView.h"
+#include "ui/widgets/PulsatingBorder.h"
 
 class UIRoot {
 public:
@@ -36,6 +38,9 @@ public:
            CrosshairManager* crosshair,
            MissileManager* missiles)
         : engine(engine), sonar(sonar), power(power), depth(depth), targeting(targeting), launchSequence(launchSequence), contacts(contacts), crosshairManager(crosshair), missileManager(missiles) {
+        
+        // Create mission instruction manager
+        missionManager = std::make_unique<MissionInstructionManager>(engine, launchSequence);
 
         sonarView = std::make_unique<SonarView>(*contacts);
         statusPanel = std::make_unique<StatusPanel>(engine);
@@ -45,7 +50,10 @@ public:
         contactView = std::make_unique<ContactView>(*contacts);
         crosshairView = std::make_unique<CrosshairView>(*crosshairManager);
         missileView = std::make_unique<MissileView>(*missiles);
-        guidanceView = std::make_unique<GuidanceView>();
+        guidanceView = std::make_unique<GuidanceView>(*missionManager);
+        
+        // Create pulsating border for UI highlighting
+        uiPulsatingBorder = PulsatingBorder(YELLOW, 4.0f, 0.2f, 1.0f, 3);
 
         // Simple layout (manual rects to keep lean)
         guidanceView->setBounds({20, 60, 600, 70});  // Position above sonar view with more height
@@ -63,6 +71,9 @@ public:
         depthView->update(dt);
         controlPanel->update(dt);
         crosshairManager->update(dt);
+        
+        // Update pulsating border for UI highlighting
+        uiPulsatingBorder.update(dt);
 
         // Update crosshair manager with mouse position
         Vector2 mouse = GetMousePosition();
@@ -89,10 +100,26 @@ public:
         DrawText("Submarine Payload Launch Control Simulator", 20, 20, 24, RAYWHITE);
         guidanceView->draw();
         statusPanel->draw();
+        
+        // Draw power view with potential pulsating border
+        if (missionManager->shouldPulsate(PulsateTarget::POWER_SWITCH)) {
+            drawPulsatingBorder(powerView->getBounds());
+        }
         powerView->draw();
+        
+        // Draw depth view with potential pulsating border
+        if (missionManager->shouldPulsate(PulsateTarget::DEPTH_THROTTLE)) {
+            drawPulsatingBorder(depthView->getBounds());
+        }
         depthView->draw();
-        controlPanel->draw();
-
+        
+        // Draw control panel with potential pulsating borders for different elements
+        drawControlPanelWithPulsation();
+        
+        // Draw sonar view with potential pulsating border
+        if (missionManager->shouldPulsate(PulsateTarget::SONAR_BOX)) {
+            drawPulsatingBorder(sonarView->getBounds());
+        }
         // Draw sonar view first (background, grid, submarine)
         sonarView->draw();
         
@@ -128,6 +155,73 @@ private:
     std::unique_ptr<CrosshairView> crosshairView;
     std::unique_ptr<MissileView> missileView;
     std::unique_ptr<GuidanceView> guidanceView;
+    
+    // Mission instruction manager (simulation layer)
+    std::unique_ptr<MissionInstructionManager> missionManager;
+    
+    // Pulsating border for UI highlighting
+    PulsatingBorder uiPulsatingBorder;
+    
+    // Helper methods for pulsating borders
+    void drawPulsatingBorder(const Rectangle& bounds) const {
+        uiPulsatingBorder.drawBorder(bounds);
+    }
+    
+    void drawControlPanelWithPulsation() const {
+        // Draw control panel normally
+        controlPanel->draw();
+        
+        // Draw pulsating borders for specific control panel elements if needed
+        // These bounds would need to be calculated or stored based on control panel layout
+        if (missionManager->shouldPulsate(PulsateTarget::AUTHORIZE_BUTTON)) {
+            // Calculate authorize button bounds (approximate)
+            Rectangle controlBounds = controlPanel->getBounds();
+            Rectangle authBounds = {
+                controlBounds.x + 15, 
+                controlBounds.y + 145, 
+                controlBounds.width * 0.35f - 15, 
+                35
+            };
+            drawPulsatingBorder(authBounds);
+        }
+        
+        if (missionManager->shouldPulsate(PulsateTarget::ARM_BUTTON)) {
+            // Calculate arm button bounds (approximate)
+            Rectangle controlBounds = controlPanel->getBounds();
+            Rectangle armBounds = {
+                controlBounds.x + 15, 
+                controlBounds.y + 195, 
+                controlBounds.width * 0.35f - 15, 
+                35
+            };
+            drawPulsatingBorder(armBounds);
+        }
+        
+        if (missionManager->shouldPulsate(PulsateTarget::LAUNCH_BUTTON)) {
+            // Calculate launch button bounds (approximate)
+            Rectangle controlBounds = controlPanel->getBounds();
+            Rectangle launchBounds = {
+                controlBounds.x + 15, 
+                controlBounds.y + 245, 
+                controlBounds.width * 0.35f - 15, 
+                35
+            };
+            drawPulsatingBorder(launchBounds);
+        }
+        
+        if (missionManager->shouldPulsate(PulsateTarget::KEYPAD_AREA)) {
+            // Calculate keypad area bounds (approximate)
+            Rectangle controlBounds = controlPanel->getBounds();
+            float rightX = controlBounds.x + controlBounds.width * 0.55f + 15;
+            Rectangle keypadBounds = {
+                rightX - 10, 
+                controlBounds.y + 120, 
+                140, 
+                200
+            };
+            drawPulsatingBorder(keypadBounds);
+        }
+    }
 
 };
 
