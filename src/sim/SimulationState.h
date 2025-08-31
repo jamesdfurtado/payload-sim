@@ -3,30 +3,32 @@
 #include <cstdint>
 
 struct SimulationState {
-    // Core flags used across systems
-    bool targetValidated = false;
+    // targeting system state
     bool targetAcquired = false;
-    bool depthClearanceMet = false;
-    bool launchTubeIntegrity = true;
-    bool payloadSystemOperational = false;
-    bool powerSupplyStable = false;
-    bool noFriendlyUnitsInBlastRadius = true;
-    bool launchConditionsFavorable = true;
-
-    // Derived flags
-    bool canLaunchAuthorized = false;
-
-    // Missile system state
+    bool targetValidated = false;
+    float targetingStability;
+    
+    // missile system state
     bool missileLaunched = false;
     bool missileActive = false;
     bool explosionActive = false;
     uint32_t missileTargetId = 0;
     float explosionTimer = 0.0f;
-
-    // Continuous state values managed by systems
-    float currentDepthMeters;    // Managed by DepthSystem
-    float powerLevel;            // Managed by PowerSystem (0.0-1.0 range)
-    float targetingStability;    // Managed by TargetingSystem (0.0-1.0 range)
+    
+    // power and systems status
+    bool powerSupplyStable = false;
+    bool payloadSystemOperational = false;
+    bool launchTubeIntegrity = true;
+    float powerLevel;
+    
+    // environment and safety checks
+    bool depthClearanceMet = false;
+    bool noFriendlyUnitsInBlastRadius = true;
+    bool launchConditionsFavorable = true;
+    float currentDepthMeters;
+    
+    // final launch authorization (derived from all the above)
+    bool canLaunchAuthorized = false;
 };
 
 
