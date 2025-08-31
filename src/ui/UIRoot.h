@@ -101,13 +101,13 @@ public:
         guidanceView->draw();
         statusPanel->draw();
         
-        // Draw power view with potential pulsating border
+        // Draw power view with potential pulsating border around the entire panel
         if (missionManager->shouldPulsate(PulsateTarget::POWER_SWITCH)) {
             drawPulsatingBorder(powerView->getBounds());
         }
         powerView->draw();
         
-        // Draw depth view with potential pulsating border
+        // Draw depth view with potential pulsating border around the entire panel
         if (missionManager->shouldPulsate(PulsateTarget::DEPTH_THROTTLE)) {
             drawPulsatingBorder(depthView->getBounds());
         }
@@ -171,53 +171,111 @@ private:
         // Draw control panel normally
         controlPanel->draw();
         
-        // Draw pulsating borders for specific control panel elements if needed
-        // These bounds would need to be calculated or stored based on control panel layout
+        // Draw pulsating borders for specific control panel elements based on exact layout calculations
         if (missionManager->shouldPulsate(PulsateTarget::AUTHORIZE_BUTTON)) {
-            // Calculate authorize button bounds (approximate)
+            // Replicate exact calculation from ControlPanel and LaunchSequencePanel
             Rectangle controlBounds = controlPanel->getBounds();
-            Rectangle authBounds = {
-                controlBounds.x + 15, 
-                controlBounds.y + 145, 
-                controlBounds.width * 0.35f - 15, 
-                35
-            };
+            float margin = 15;
+            float leftWidth = controlBounds.width * 0.35f;
+            float buttonHeight = 35;
+            float buttonWidth = leftWidth - 2 * margin;
+            
+            // Left panel area (from ControlPanel::setupLayout)
+            Rectangle leftPanelArea;
+            leftPanelArea.x = controlBounds.x + margin;
+            leftPanelArea.y = controlBounds.y + margin;
+            leftPanelArea.width = leftWidth;
+            leftPanelArea.height = controlBounds.height - 2 * margin;
+            
+            // Button area (from LaunchSequencePanel::setupLayout)
+            Rectangle buttonArea;
+            buttonArea.x = leftPanelArea.x + margin;
+            buttonArea.y = leftPanelArea.y + margin;
+            
+            // First button: authorize (from LaunchSequencePanel line 42)
+            float buttonY = buttonArea.y + 80; // 80px offset
+            Rectangle authBounds = {buttonArea.x, buttonY, buttonWidth, buttonHeight};
             drawPulsatingBorder(authBounds);
         }
         
         if (missionManager->shouldPulsate(PulsateTarget::ARM_BUTTON)) {
-            // Calculate arm button bounds (approximate)
+            // Replicate exact calculation for second button
             Rectangle controlBounds = controlPanel->getBounds();
-            Rectangle armBounds = {
-                controlBounds.x + 15, 
-                controlBounds.y + 195, 
-                controlBounds.width * 0.35f - 15, 
-                35
-            };
+            float margin = 15;
+            float leftWidth = controlBounds.width * 0.35f;
+            float buttonHeight = 35;
+            float buttonWidth = leftWidth - 2 * margin;
+            
+            Rectangle leftPanelArea;
+            leftPanelArea.x = controlBounds.x + margin;
+            leftPanelArea.y = controlBounds.y + margin;
+            leftPanelArea.width = leftWidth;
+            leftPanelArea.height = controlBounds.height - 2 * margin;
+            
+            Rectangle buttonArea;
+            buttonArea.x = leftPanelArea.x + margin;
+            buttonArea.y = leftPanelArea.y + margin;
+            
+            // Second button: arm (from LaunchSequencePanel lines 42-45)
+            float buttonY = buttonArea.y + 80; // Start position
+            buttonY += buttonHeight + margin;   // Move to second button
+            Rectangle armBounds = {buttonArea.x, buttonY, buttonWidth, buttonHeight};
             drawPulsatingBorder(armBounds);
         }
         
         if (missionManager->shouldPulsate(PulsateTarget::LAUNCH_BUTTON)) {
-            // Calculate launch button bounds (approximate)
+            // Replicate exact calculation for third button
             Rectangle controlBounds = controlPanel->getBounds();
-            Rectangle launchBounds = {
-                controlBounds.x + 15, 
-                controlBounds.y + 245, 
-                controlBounds.width * 0.35f - 15, 
-                35
-            };
+            float margin = 15;
+            float leftWidth = controlBounds.width * 0.35f;
+            float buttonHeight = 35;
+            float buttonWidth = leftWidth - 2 * margin;
+            
+            Rectangle leftPanelArea;
+            leftPanelArea.x = controlBounds.x + margin;
+            leftPanelArea.y = controlBounds.y + margin;
+            leftPanelArea.width = leftWidth;
+            leftPanelArea.height = controlBounds.height - 2 * margin;
+            
+            Rectangle buttonArea;
+            buttonArea.x = leftPanelArea.x + margin;
+            buttonArea.y = leftPanelArea.y + margin;
+            
+            // Third button: launch (from LaunchSequencePanel lines 42-48)
+            float buttonY = buttonArea.y + 80; // Start position
+            buttonY += buttonHeight + margin;   // Move to second button
+            buttonY += buttonHeight + margin;   // Move to third button
+            Rectangle launchBounds = {buttonArea.x, buttonY, buttonWidth, buttonHeight};
             drawPulsatingBorder(launchBounds);
         }
         
         if (missionManager->shouldPulsate(PulsateTarget::KEYPAD_AREA)) {
-            // Calculate keypad area bounds (approximate)
+            // Calculate keypad area bounds using exact same logic as ControlPanel
             Rectangle controlBounds = controlPanel->getBounds();
-            float rightX = controlBounds.x + controlBounds.width * 0.55f + 15;
+            float margin = 15;
+            float leftWidth = controlBounds.width * 0.35f;
+            float rightWidth = controlBounds.width * 0.35f;
+            float centerGap = controlBounds.width * 0.20f;
+            
+            // Right panel area calculation
+            float rightPanelX = controlBounds.x + leftWidth + centerGap + margin;
+            float rightPanelY = controlBounds.y + margin;
+            
+            // Auth area height
+            float authAreaHeight = 100;
+            
+            // Keypad area calculation (matches ControlPanel::setupLayout)
+            float keypadY = rightPanelY + authAreaHeight + margin - 20; // Move keypad up by 20px
+            float keypadWidth = 120;
+            float keypadHeight = 160;
+            float keypadX = rightPanelX + (rightWidth - keypadWidth) / 2; // Centered in right panel
+            
+            // Adjust bounds: expand top and right borders more
             Rectangle keypadBounds = {
-                rightX - 10, 
-                controlBounds.y + 120, 
-                140, 
-                200
+                keypadX - 15,           // Left padding
+                keypadY - 25,           // Expand top border more (was -15, now -25)
+                keypadWidth + 50,       // Expand right border more (was +40, now +50)
+                keypadHeight + 60       // Keep current height
             };
             drawPulsatingBorder(keypadBounds);
         }

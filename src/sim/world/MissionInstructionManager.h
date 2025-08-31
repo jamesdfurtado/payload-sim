@@ -48,7 +48,7 @@ public:
         if (!state.depthClearanceMet) {
             return {
                 MissionStep::ADJUST_DEPTH,
-                "Adjust depth to operational level (105m)",
+                "Adjust depth to operational level",
                 PulsateTarget::DEPTH_THROTTLE,
                 false
             };
