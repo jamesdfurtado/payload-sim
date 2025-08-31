@@ -7,13 +7,13 @@
 class DepthSystem : public ISystem {
 public:
     DepthSystem() {
-        // Generate random optimal depth between 50 and 200 meters
+        // generate random optimal depth
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<float> dis(50.0f, 200.0f);
         optimalDepth = dis(gen);
         
-        // Generate random spawn depth within 30m above or below optimal depth
+        // generate random spawn depth (+/-30m of optimal depth)
         std::uniform_real_distribution<float> spawnDis(-30.0f, 30.0f);
         float spawnOffset = spawnDis(gen);
         desiredDepth = optimalDepth + spawnOffset;
@@ -25,7 +25,7 @@ public:
     const char* getName() const override { return "DepthSystem"; }
     
     void update(SimulationState& state, float dt) override {
-        // Apply depth change based on throttle
+        // depth throttle handling
         if (depthChange != 0.0f) {
             desiredDepth += depthChange * depthChangeRate * dt;
             desiredDepth = std::clamp(desiredDepth, minDepth, maxDepth);
@@ -33,7 +33,8 @@ public:
         
         // Update simulation state
         state.currentDepthMeters = desiredDepth;
-        // Depth clearance requires being within 5 meters of optimal depth (110.2m ± 5m = 105.2m to 115.2m)
+
+        // has user reached desired depth?
         state.depthClearanceMet = state.currentDepthMeters >= (optimalDepth - 5.0f) && state.currentDepthMeters <= (optimalDepth + 5.0f);
     }
 
@@ -42,8 +43,6 @@ public:
     
     void setDepthChange(float change) { depthChange = std::clamp(change, -1.0f, 1.0f); }
     void setThrottleValue(float throttleValue) { 
-        // Convert throttle value (0.0f = DOWN, 0.5f = NEUTRAL, 1.0f = UP) to depth change
-        // -0.5f to 0.5f (halved sensitivity)
         float depthChange = (throttleValue - 0.5f) * 1.0f;
         setDepthChange(depthChange);
     }
@@ -56,18 +55,17 @@ public:
     }
     
     float getThrottlePercentage() const {
-        // Convert depth change back to throttle percentage for display
         return (depthChange + 0.5f) * 100.0f;
     }
 
 private:
-    float desiredDepth;         // Initial spawn depth (randomly set relative to optimal depth)
-    float depthChange = 0.0f;  // -1.0f = DOWN, 0.0f = NEUTRAL, 1.0f = UP
+    float desiredDepth;
+    float depthChange = 0.0f;
     
-    const float depthChangeRate = 16.67f;  // meters per second (reduced from 50.0f for 3x less sensitivity)
-    const float minDepth = 10.0f;         // minimum depth in meters
-    const float maxDepth = 500.0f;        // maximum depth in meters
-    float optimalDepth;                   // optimal launch depth in meters (randomly generated between 50-200m)
+    const float depthChangeRate = 16.67f;
+    const float minDepth = 10.0f;
+    const float maxDepth = 500.0f;
+    float optimalDepth;
 };
 
 
