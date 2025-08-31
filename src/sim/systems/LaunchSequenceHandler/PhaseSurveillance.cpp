@@ -7,7 +7,6 @@ void PhaseSurveillance::addCondition(std::function<bool(const SimulationState&)>
 }
 
 CheckAuthorizationStatus PhaseSurveillance::checkConditions(const SimulationState& state) const {
-    // Check all conditions
     std::string message;
     bool isAuth = true;
     

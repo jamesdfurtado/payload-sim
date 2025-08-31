@@ -24,17 +24,14 @@ struct SurveillanceCondition {
 
 class PhaseSurveillance {
 public:
-    // Add conditions to monitor
+    // Allow for adjustable surveillance conditions
     void addCondition(std::function<bool(const SimulationState&)> checkFunc, 
                      const std::string& failureMessage);
     
     // Check all conditions and return status
     CheckAuthorizationStatus checkConditions(const SimulationState& state) const;
-    
-    // Clear all conditions
+
     void clearConditions();
-    
-    // Get number of conditions
     size_t getConditionCount() const { return conditions.size(); }
 
 private:
