@@ -26,5 +26,3 @@ private:
     SimulationState state{};
     std::vector<std::shared_ptr<ISystem>> systems;
 };
-
-
