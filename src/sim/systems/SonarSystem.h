@@ -9,21 +9,21 @@ public:
     explicit SonarSystem(ContactManager& contacts) : contactManager(contacts) {}
     const char* getName() const override { return "SonarSystem"; }
 
+    // manages contact movement, spawning, and target selection
     void update(SimulationState& state, float dt) override {
         contactManager.updateContactPositions(dt);
         contactManager.updateSpawnTimer(dt);
         contactManager.spawnContactsIfNeeded();
         contactManager.removeOutOfBoundsContacts();
 
-        // Maintain a selected target if available; fall back to nearest
+        
+        // Ensure the selected target is valid
         if (selectedTargetId != 0 && !contactManager.isContactAlive(selectedTargetId)) {
             selectedTargetId = 0;
         }
         if (selectedTargetId == 0) {
             selectedTargetId = contactManager.getNearestContactId({0,0});
         }
-        // Note: targetAcquired is now managed exclusively by TargetAcquisitionSystem
-        // to prevent race conditions and flickering
     }
 
     void attemptManualLock(const Vector2& worldPos) {
