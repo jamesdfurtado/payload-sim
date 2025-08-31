@@ -3,7 +3,7 @@
 #include <iomanip>
 
 bool ArmingPhase::isArmingComplete(float armingTimer) {
-    const float ARMING_DURATION = 2.0f; // 2 seconds
+    const float ARMING_DURATION = 2.0f;
     return armingTimer >= ARMING_DURATION;
 }
 

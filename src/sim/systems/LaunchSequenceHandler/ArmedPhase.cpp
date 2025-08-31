@@ -3,12 +3,11 @@
 #include "../../SimulationState.h"
 #include <iostream>
 
-// Create a static surveillance instance for armed phase
+// Survey for all flags to be met to remain armed
 static PhaseSurveillance armedSurveillance = []() {
     PhaseSurveillance surveillance;
-    
-    // Add ALL conditions that must be met to stay in armed state
-    // This includes everything from authorized phase (payload system is a state, not a condition)
+
+    // Conditions to be met
     surveillance.addCondition(
         LaunchSequenceHandler::checkTargetValidated, 
         "Target no longer validated. "
@@ -38,14 +37,10 @@ static PhaseSurveillance armedSurveillance = []() {
         "Launch conditions unfavorable. "
     );
     
-    // Note: payloadSystemOperational is NOT monitored here because it's a state indicator
-    // that gets set to true when entering Armed state and false when leaving
-    
     return surveillance;
 }();
 
 CheckAuthorizationStatus ArmedPhase::canStayArmed(const SimulationState& state) {
-    // Use the modular surveillance system to check surveillance conditions
-    // Debug logging removed to prevent spam - only log when conditions actually fail
+    // Use the surveillance
     return armedSurveillance.checkConditions(state);
 }

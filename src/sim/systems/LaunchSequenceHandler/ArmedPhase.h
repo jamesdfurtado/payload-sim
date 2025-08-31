@@ -7,6 +7,5 @@
 
 class ArmedPhase {
 public:
-    // Check if we can stay in Armed state (includes ALL surveillance conditions)
     static CheckAuthorizationStatus canStayArmed(const SimulationState& state);
 };

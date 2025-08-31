@@ -22,7 +22,7 @@ AuthorizationResult IdlePhase::canAuthorize(const SimulationState& state) {
         {LaunchSequenceHandler::checkLaunchConditionsFavorable, "Launch conditions unfavorable. "}
     };
     
-    // Check all conditions
+    // Check if conditions are met to authorize
     std::string message;
     bool canAuth = true;
     
@@ -40,15 +40,15 @@ AuthorizationResult IdlePhase::canAuthorize(const SimulationState& state) {
     return AuthorizationResult(canAuth, message);
 }
 
+// Generate authorization code
 std::string IdlePhase::createCode() {
-    // Generate a random 4-digit code
+
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, 9999);
     
     int code = dis(gen);
     
-    // Format as 4-digit string with leading zeros if needed
     std::ostringstream oss;
     oss << std::setw(4) << std::setfill('0') << code;
     return oss.str();

@@ -3,11 +3,11 @@
 #include "../../SimulationState.h"
 #include <iostream>
 
-// Create a static surveillance instance for authorized phase
+// Survey for all flags to be met to remain authorized
 static PhaseSurveillance authorizedSurveillance = []() {
     PhaseSurveillance surveillance;
     
-    // Add all the conditions that must be met to stay in authorized state
+    // Conditions to be met
     surveillance.addCondition(
         LaunchSequenceHandler::checkTargetValidated, 
         "Target no longer validated. "
@@ -41,7 +41,6 @@ static PhaseSurveillance authorizedSurveillance = []() {
 }();
 
 CheckAuthorizationStatus AuthorizedPhase::canStayAuthorized(const SimulationState& state) {
-    // Use the modular surveillance system to check all conditions
-    // Debug logging removed to prevent spam - only log when conditions actually fail
+    // Use the surveillance
     return authorizedSurveillance.checkConditions(state);
 }

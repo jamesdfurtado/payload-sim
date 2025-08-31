@@ -4,7 +4,7 @@
 #include "../../SimulationState.h"
 #include <string>
 
-// Forward declaration to avoid circular dependency
+// Forward declaration
 class LaunchSequenceHandler;
 
 struct AuthorizationResult {
@@ -17,9 +17,6 @@ struct AuthorizationResult {
 
 class IdlePhase {
 public:
-    // Check if we can move from Idle to Authorized state
     static AuthorizationResult canAuthorize(const SimulationState& state);
-    
-    // Generate a random 4-digit authorization code
     static std::string createCode();
 };

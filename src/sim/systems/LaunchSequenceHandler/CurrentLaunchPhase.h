@@ -3,12 +3,11 @@
 enum class CurrentLaunchPhase {
     Idle,
     Authorized,
-    Arming,      // New transition state
+    Arming,
     Armed,
-    Launching,   // New transition state
+    Launching,
     Launched,
-    Resetting  // New transition state
+    Resetting
 };
 
-// Helper functions for CurrentLaunchPhase
 const char* getCurrentPhaseString(CurrentLaunchPhase phase);
