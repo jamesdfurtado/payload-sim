@@ -7,21 +7,21 @@
 class TextBox : public Widget {
 public:
     enum class Mode {
-        INPUT,      // Can receive input and handle keypad events
-        DISPLAY     // Read-only display of text
+        INPUT,      // accepts keypad input
+        DISPLAY     // read-only display
     };
 
     struct TextBoxStyle {
-        Color backgroundColor = {20, 20, 20, 255};  // Dark background
-        Color borderColor = GRAY;                    // Border color
-        Color textColor = WHITE;                     // Text color
-        Color placeholderColor = {100, 100, 100, 255}; // Placeholder color
+        Color backgroundColor = {20, 20, 20, 255};  // dark background
+        Color borderColor = GRAY;                    // border color
+        Color textColor = WHITE;                     // text color
+        Color placeholderColor = {100, 100, 100, 255}; // placeholder color
         int borderThickness = 2;
         int textSize = 20;
-        int maxLength = 4;                           // Maximum characters
+        int maxLength = 4;                           // character limit
         bool showBorder = true;
         bool showPlaceholder = true;
-        std::string placeholder = "_";               // Placeholder character
+        std::string placeholder = "_";               // empty slot character
     };
 
     explicit TextBox(Mode mode = Mode::DISPLAY, int maxLength = 4)
@@ -29,11 +29,11 @@ public:
         setupDefaultStyle();
     }
 
-    // Mode management
+    // input vs display mode
     void setMode(Mode newMode) { mode = newMode; }
     Mode getMode() const { return mode; }
 
-    // Text management
+    // content control
     void setText(const std::string& text) {
         if (text.length() <= maxLength) {
             currentText = text;
@@ -46,10 +46,10 @@ public:
     bool isComplete() const { return currentText.length() == maxLength; }
     int getCurrentLength() const { return currentText.length(); }
 
-    // Input handling (only for INPUT mode)
+    // keypad input (input mode only)
     void addCharacter(char ch) {
         if (mode == Mode::INPUT && currentText.length() < maxLength) {
-            if (isdigit(ch)) {  // Only allow digits for now
+            if (isdigit(ch)) {  // digits only
                 currentText += ch;
             }
         }
@@ -61,7 +61,7 @@ public:
         }
     }
 
-    // Style customization
+    // appearance settings
     void setStyle(const TextBoxStyle& newStyle) { style = newStyle; }
     void setBorderColor(Color color) { style.borderColor = color; }
     void setTextColor(Color color) { style.textColor = color; }
@@ -70,37 +70,37 @@ public:
     void setBorderThickness(int thickness) { style.borderThickness = thickness; }
     void setMaxLength(int length) { maxLength = length; }
 
-    // Widget interface
+    // standard widget methods
     void update(float dt) override {
-        // TextBox state updates can go here if needed
+        // placeholder for future logic
     }
 
     void draw() const override {
-        // Draw background
+        // background fill
         DrawRectangleRec(bounds, style.backgroundColor);
         
-        // Draw border if enabled
+        // optional border
         if (style.showBorder) {
             DrawRectangleLinesEx(bounds, style.borderThickness, style.borderColor);
         }
 
-        // Calculate text positioning
+        // center text vertically
         int textX = (int)(bounds.x + 10);
         int textY = (int)(bounds.y + (bounds.height - style.textSize) / 2);
 
         if (currentText.empty() && style.showPlaceholder) {
-            // Draw placeholder characters
+            // show empty slots
             for (int i = 0; i < maxLength; i++) {
                 int placeholderX = textX + i * (style.textSize * 0.6f);
                 DrawText(style.placeholder.c_str(), placeholderX, textY, style.textSize, style.placeholderColor);
             }
         } else {
-            // Draw actual text
+            // render content
             DrawText(currentText.c_str(), textX, textY, style.textSize, style.textColor);
         }
     }
 
-    // Mouse interaction (could implement click-to-focus for INPUT mode)
+    // mouse handling (could add focus later)
     bool onMouseDown(Vector2 pos) override {
         // Could implement click-to-focus in the future
         return false;
