@@ -8,11 +8,10 @@ public:
     explicit SonarView(ContactManager& contacts) : contacts(contacts) {}
 
     void draw() const override {
-        // sonar display with sub icon
+        // draw sonar display with sub icon
         drawSonar(bounds);
     }
-
-    // bounds for overlays
+    
     const Rectangle& getBounds() const { return bounds; }
 
 private:
