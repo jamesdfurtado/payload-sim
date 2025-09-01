@@ -7,17 +7,14 @@ class ContactView : public Widget {
 public:
     explicit ContactView(ContactManager& contacts) : contacts(contacts) {}
 
-    void draw() const override {
-        // This view doesn't draw its own panel - it only renders contacts on sonar
-    }
+//    void draw() const override {
+ //   }
 
-    // This method renders contacts on the sonar display
+    // draws contact dots on sonar
     void drawContactsOnSonar(const Rectangle& sonarBounds) const {
         for (const auto& contact : contacts.getActiveContacts()) {
             Vector2 screen = worldToScreen(contact.position, sonarBounds);
             Color contactColor = getContactTypeColor(contact.type);
-            
-            // Draw simple colored dot - no outlines, no numbers, same size
             DrawCircle((int)screen.x, (int)screen.y, 4, contactColor);
         }
     }
@@ -35,7 +32,7 @@ public:
     }
 
 private:
-    // Coordinate transform: world (-600..600, -360..360) to screen inside rectangle
+    // convert world coords to screen pixels
     static Vector2 worldToScreen(Vector2 world, const Rectangle& r) {
         float nx = (world.x + 600.0f) / 1200.0f;
         float ny = (world.y + 360.0f) / 720.0f;
