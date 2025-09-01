@@ -8,65 +8,58 @@ class MissileView : public Widget {
 public:
     explicit MissileView(MissileManager& missiles) : missileManager(missiles) {}
 
-    void draw() const override {
-        // This view doesn't draw its own panel - it only renders missiles on sonar
-    }
+//    void draw() const override {
+//    }
 
-    // This method renders missiles and explosions on the sonar display
+    // draw missiles and explosions on sonar
     void drawMissilesOnSonar(const Rectangle& sonarBounds) const {
-        // Debug: Log missile count
         int missileCount = static_cast<int>(missileManager.getActiveMissiles().size());
         
-        // Draw missiles
+        // draw active missiles
         for (const auto& missile : missileManager.getActiveMissiles()) {
             Vector2 screen = worldToScreen(missile.position, sonarBounds);
             DrawCircle((int)screen.x, (int)screen.y, 3, YELLOW);
             
-            // Draw missile trail (actual path taken)
+            // draw trail showing path
             if (missile.trailPoints.size() > 1) {
                 for (size_t i = 1; i < missile.trailPoints.size(); ++i) {
                     Vector2 start = worldToScreen(missile.trailPoints[i-1], sonarBounds);
                     Vector2 end = worldToScreen(missile.trailPoints[i], sonarBounds);
                     
-                    // Fade trail - older segments are more transparent
                     float fadeRatio = (float)i / (float)missile.trailPoints.size();
-                    float alpha = 0.3f + (fadeRatio * 0.4f); // Range from 0.3 to 0.7
-                    
+                    float alpha = 0.3f + (fadeRatio * 0.4f);
+
                     DrawLineEx(start, end, 2, Fade(GRAY, alpha));
                 }
             }
         }
         
-        // Draw explosions
+        // draw explosion
         for (const auto& explosion : missileManager.getActiveExplosions()) {
             Vector2 screen = worldToScreen(explosion.position, sonarBounds);
             float scale = sonarBounds.width / 1200.0f;
             
             int x = (int)screen.x;
             int y = (int)screen.y;
-            
-            // Calculate ring sizes in screen coordinates
+
             int innerRadius = (int)(explosion.innerRing * scale);
             int middleRadius = (int)(explosion.middleRing * scale);
             int outerRadius = (int)(explosion.outerRing * scale);
             
-            // Calculate color intensities based on time
+
             float progress = explosion.timer / explosion.duration;
-            float pulseIntensity = 0.5f + 0.5f * sinf(progress * 10.0f); // Pulsing effect
+            float pulseIntensity = 0.5f + 0.5f * sinf(progress * 10.0f);
             
-            // Initial bright flash (only at the very beginning)
             if (explosion.flashIntensity > 0.8f) {
                 DrawCircle(x, y, (int)(20 * scale), Fade(WHITE, explosion.flashIntensity));
             }
             
-            // Outer ring - red, appears last
             if (outerRadius > 5) {
                 Color outerColor = {255, 100, 50, (unsigned char)(255 * (1.0f - progress) * pulseIntensity)};
                 DrawCircleLines(x, y, outerRadius, outerColor);
                 DrawCircleLines(x, y, outerRadius - 1, Fade(outerColor, 0.5f));
             }
             
-            // Middle ring - orange, appears second
             if (middleRadius > 3) {
                 Color middleColor = {255, 150, 50, (unsigned char)(255 * (1.2f - progress) * pulseIntensity)};
                 DrawCircleLines(x, y, middleRadius, middleColor);
@@ -74,7 +67,6 @@ public:
                 DrawCircleLines(x, y, middleRadius + 1, Fade(middleColor, 0.3f));
             }
             
-            // Inner ring - bright yellow/white, appears first
             if (innerRadius > 1) {
                 Color innerColor = {255, 255, 150, (unsigned char)(255 * (1.5f - progress) * pulseIntensity)};
                 DrawCircleLines(x, y, innerRadius, innerColor);
@@ -83,7 +75,6 @@ public:
                 DrawCircleLines(x, y, innerRadius + 2, Fade(innerColor, 0.2f));
             }
             
-            // Central core - always bright while explosion is active
             Color coreColor = {255, 255, 200, (unsigned char)(255 * (1.0f - progress * 0.7f) * pulseIntensity)};
             DrawCircle(x, y, (int)(8 * scale), Fade(coreColor, 0.6f));
             DrawCircle(x, y, (int)(4 * scale), coreColor);
@@ -91,7 +82,7 @@ public:
     }
 
 private:
-    // Coordinate transform: world (-600..600, -360..360) to screen inside rectangle
+    // world to screen conversion
     static Vector2 worldToScreen(Vector2 world, const Rectangle& r) {
         float nx = (world.x + 600.0f) / 1200.0f;
         float ny = (world.y + 360.0f) / 720.0f;
