@@ -13,25 +13,16 @@ public:
     }
 
     void drawBorder(const Rectangle& bounds) const {
-        // Calculate pulsing alpha
         float pulseAlpha = minAlpha + (maxAlpha - minAlpha) * (0.5f + 0.5f * sinf(timer * speed));
-        
-        // Draw the pulsating border
         DrawRectangleLinesEx(bounds, thickness, Fade(baseColor, pulseAlpha));
     }
     
     void drawFilledBorder(const Rectangle& bounds, float backgroundAlpha = 0.2f) const {
-        // Calculate pulsing alpha for border
-        float pulseAlpha = minAlpha + (maxAlpha - minAlpha) * (0.5f + 0.5f * sinf(timer * speed));
-        
-        // Draw background
+        float pulseAlpha = minAlpha + (maxAlpha - minAlpha) * (0.5f + 0.5f * sinf(timer * speed));    
         DrawRectangleRec(bounds, Fade(baseColor, backgroundAlpha));
-        
-        // Draw the pulsating border
         DrawRectangleLinesEx(bounds, thickness, Fade(baseColor, pulseAlpha));
     }
 
-    // Setters for customization
     void setColor(Color color) { baseColor = color; }
     void setSpeed(float newSpeed) { speed = newSpeed; }
     void setAlphaRange(float min, float max) { minAlpha = min; maxAlpha = max; }
