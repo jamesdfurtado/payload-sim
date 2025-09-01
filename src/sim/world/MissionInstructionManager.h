@@ -39,12 +39,10 @@ public:
     MissionInstructionManager(SimulationEngine& engine, LaunchSequenceHandler* launchHandler)
         : engine(engine), launchSequenceHandler(launchHandler) {}
 
+    // return currnet active mission step
     MissionInstruction getCurrentInstruction() const {
         const auto& state = engine.getState();
         
-        // Priority order checking:
-        
-        // 1. Check depth (highest priority)
         if (!state.depthClearanceMet) {
             return {
                 MissionStep::ADJUST_DEPTH,
@@ -54,7 +52,6 @@ public:
             };
         }
         
-        // 2. Check target acquisition
         if (!state.targetAcquired) {
             return {
                 MissionStep::ACQUIRE_TARGET,
@@ -64,7 +61,6 @@ public:
             };
         }
         
-        // 3. Check power
         if (!state.powerSupplyStable) {
             return {
                 MissionStep::TURN_ON_POWER,
@@ -74,13 +70,11 @@ public:
             };
         }
         
-        // 4. Check launch sequence phases
         if (launchSequenceHandler) {
             CurrentLaunchPhase currentPhase = launchSequenceHandler->getCurrentPhase();
             
             switch (currentPhase) {
                 case CurrentLaunchPhase::Idle:
-                    // Check if authorization is pending (code generated but not entered)
                     if (launchSequenceHandler->isAuthorizationPending()) {
                         return {
                             MissionStep::INPUT_AUTH_CODE,
@@ -89,7 +83,6 @@ public:
                             false
                         };
                     } else {
-                        // Need to click authorize to generate code
                         return {
                             MissionStep::CLICK_AUTHORIZE,
                             "Click AUTHORIZE LAUNCH button",
@@ -148,7 +141,6 @@ public:
             }
         }
         
-        // Fallback
         return {
             MissionStep::ADJUST_DEPTH,
             "Initialize systems",
