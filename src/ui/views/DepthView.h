@@ -14,9 +14,8 @@ public:
     DepthView(SimulationEngine& engine, DepthSystem& depth) 
         : engine(engine), depth(depth) {
         
-        // Create the depth throttle
+        // depth control slider
         depthThrottle = std::make_unique<Throttle>([this](float value) {
-            // Delegate throttle processing to DepthSystem
             this->depth.setThrottleValue(value);
         });
     }
@@ -24,36 +23,32 @@ public:
     void draw() const override {
         const auto& s = engine.getState();
         
-        // Draw dark green background panel
+        // depth panel
         DrawRectangleRec(bounds, Fade(DARKGREEN, 0.3f));
-        
-        // Draw title
         DrawText("Depth", (int)bounds.x + 10, (int)bounds.y + 8, 20, LIME);
         
-        // Draw current depth label
+        // current depth display
         DrawText("Current:", (int)bounds.x + 10, (int)bounds.y + 40, 18, RAYWHITE);
-        // Draw current depth value - red if outside range, green if within range
         Color currentDepthColor = s.depthClearanceMet ? GREEN : RED;
         std::string currentDepthStr = formatFloat(s.currentDepthMeters, 1) + "m";
         DrawText(currentDepthStr.c_str(),
                  (int)bounds.x + 100, (int)bounds.y + 40, 18, currentDepthColor);
 
-        // Draw optimal depth label
+        // target depth label
         DrawText("Optimal:", (int)bounds.x + 10, (int)bounds.y + 64, 18, RAYWHITE);
-        // Draw optimal depth value in cyan (desired/target color)
         std::string optimalDepthStr = formatFloat(depth.getOptimalDepth(), 1) + "m";
         DrawText(optimalDepthStr.c_str(),
                  (int)bounds.x + 100, (int)bounds.y + 64, 18, SKYBLUE);
         
-        // Position and draw the throttle
+        // throttle positioning
         float throttleWidth = 50;
-        float throttleX = bounds.x + (bounds.width - throttleWidth) / 2 - 70; // Center horizontally, then left 70px
-        Rectangle throttleRect = { throttleX, bounds.y + 12, throttleWidth, bounds.height - 25 }; // Moved up 10px (35-10=25)
+        float throttleX = bounds.x + (bounds.width - throttleWidth) / 2 - 70;
+        Rectangle throttleRect = { throttleX, bounds.y + 12, throttleWidth, bounds.height - 25 };
         depthThrottle->setBounds(throttleRect);
         
         depthThrottle->draw();
         
-        // Draw status and throttle value (positioned to the right of the throttle, moved 100px right)
+        // movement status display
         const char* direction = depth.getMovementStatus();
         
         float statusX = throttleX + throttleWidth + 200;
