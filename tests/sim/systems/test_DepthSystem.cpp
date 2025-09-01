@@ -8,133 +8,111 @@ protected:
     SimulationState state;
     
     void SetUp() override {
-        state.currentDepthMeters = 0.0f; // Start at surface
-        state.depthClearanceMet = false;
+        state = {};
     }
 };
 
-TEST_F(DepthSystemTest, DefaultState) {
-    EXPECT_FLOAT_EQ(state.currentDepthMeters, 0.0f);
-    EXPECT_FALSE(state.depthClearanceMet);
-    EXPECT_FLOAT_EQ(depthSystem.getTargetDepth(), 0.0f);
+TEST_F(DepthSystemTest, InitializesWithRandomOptimalDepth) {
+    float optimalDepth = depthSystem.getOptimalDepth();
+    EXPECT_GE(optimalDepth, 50.0f);
+    EXPECT_LE(optimalDepth, 200.0f);
 }
 
-TEST_F(DepthSystemTest, ThrottleControl) {
-    // Test throttle value setting and response
-    depthSystem.setThrottle(0.8f); // 80% down throttle
-    EXPECT_FLOAT_EQ(depthSystem.getThrottle(), 0.8f);
+TEST_F(DepthSystemTest, InitializesWithDepthNearOptimal) {
+    float currentDepth = depthSystem.getDepth();
+    float optimalDepth = depthSystem.getOptimalDepth();
     
-    // Update system and check depth changes
-    float initialDepth = state.currentDepthMeters;
-    depthSystem.update(state, 1.0f); // 1 second
-    
-    // Should be descending (more negative depth)
-    EXPECT_LT(state.currentDepthMeters, initialDepth);
+    EXPECT_GE(currentDepth, 10.0f);
+    EXPECT_LE(currentDepth, 500.0f);
+    EXPECT_LE(abs(currentDepth - optimalDepth), 30.0f);
 }
 
-TEST_F(DepthSystemTest, DepthMovement) {
-    // Test depth changes over time with target
-    depthSystem.setTargetDepth(-50.0f);
-    
-    float initialDepth = state.currentDepthMeters;
-    
-    // Update for several frames
-    for (int i = 0; i < 60; i++) { // 1 second at 60fps
-        depthSystem.update(state, 0.016f);
-    }
-    
-    // Should have moved toward target depth
-    EXPECT_LT(state.currentDepthMeters, initialDepth);
-    EXPECT_GT(state.currentDepthMeters, -50.0f); // Should be descending but not instantly there
+TEST_F(DepthSystemTest, UpdatesSimulationStateDepth) {
+    depthSystem.update(state, 0.016f);
+    EXPECT_EQ(state.currentDepthMeters, depthSystem.getDepth());
 }
 
-TEST_F(DepthSystemTest, OptimalDepthCalculation) {
-    // Test reaching optimal operational depth for launch
-    depthSystem.setTargetDepth(-60.0f); // Operational depth
+TEST_F(DepthSystemTest, DetectsClearanceWhenNearOptimalDepth) {
+    float optimalDepth = depthSystem.getOptimalDepth();
+    depthSystem.setDepth(optimalDepth);
     
-    // Simulate reaching target depth
-    for (int i = 0; i < 300; i++) { // 5 seconds
-        depthSystem.update(state, 0.016f);
-    }
+    depthSystem.update(state, 0.016f);
     
-    // Should be at or near operational depth
-    EXPECT_LT(state.currentDepthMeters, -50.0f);
-    EXPECT_GT(state.currentDepthMeters, -70.0f);
-}
-
-TEST_F(DepthSystemTest, ClearanceValidation) {
-    // Test depth clearance validation for launch safety
-    
-    // At surface - should not have clearance
-    depthSystem.setTargetDepth(0.0f);
-    depthSystem.update(state, 1.0f);
-    EXPECT_FALSE(state.depthClearanceMet);
-    
-    // At shallow depth - should not have clearance
-    depthSystem.setTargetDepth(-20.0f);
-    for (int i = 0; i < 100; i++) {
-        depthSystem.update(state, 0.016f);
-    }
-    EXPECT_FALSE(state.depthClearanceMet);
-    
-    // At operational depth - should have clearance
-    depthSystem.setTargetDepth(-60.0f);
-    for (int i = 0; i < 200; i++) {
-        depthSystem.update(state, 0.016f);
-    }
     EXPECT_TRUE(state.depthClearanceMet);
 }
 
-TEST_F(DepthSystemTest, EmergencySurfacing) {
-    // Start at operational depth
-    depthSystem.setTargetDepth(-70.0f);
-    for (int i = 0; i < 200; i++) {
-        depthSystem.update(state, 0.016f);
-    }
+TEST_F(DepthSystemTest, DetectsNoClearanceWhenFarFromOptimal) {
+    float optimalDepth = depthSystem.getOptimalDepth();
+    depthSystem.setDepth(optimalDepth + 20.0f);
     
-    EXPECT_TRUE(state.depthClearanceMet);
-    float deepDepth = state.currentDepthMeters;
+    depthSystem.update(state, 0.016f);
     
-    // Emergency surface
-    depthSystem.setTargetDepth(0.0f);
-    for (int i = 0; i < 300; i++) {
-        depthSystem.update(state, 0.016f);
-    }
-    
-    // Should have ascended and lost launch clearance
-    EXPECT_GT(state.currentDepthMeters, deepDepth);
     EXPECT_FALSE(state.depthClearanceMet);
 }
 
-TEST_F(DepthSystemTest, ThrottleInfluencesDepthRate) {
-    // Test that throttle affects rate of depth change
-    float initialDepth = state.currentDepthMeters;
+TEST_F(DepthSystemTest, ClampsDepthToValidRange) {
+    depthSystem.setDepth(1000.0f);
+    EXPECT_EQ(depthSystem.getDepth(), 500.0f);
     
-    // Test with low throttle
-    depthSystem.setThrottle(0.2f);
-    depthSystem.update(state, 1.0f);
-    float lowThrottleDepth = state.currentDepthMeters;
-    
-    // Reset and test with high throttle
-    state.currentDepthMeters = initialDepth;
-    depthSystem.setThrottle(0.8f);
-    depthSystem.update(state, 1.0f);
-    float highThrottleDepth = state.currentDepthMeters;
-    
-    // High throttle should produce larger depth change
-    float lowChange = abs(lowThrottleDepth - initialDepth);
-    float highChange = abs(highThrottleDepth - initialDepth);
-    EXPECT_GT(highChange, lowChange);
+    depthSystem.setDepth(-50.0f);
+    EXPECT_EQ(depthSystem.getDepth(), 10.0f);
 }
 
-TEST_F(DepthSystemTest, DepthLimits) {
-    // Test maximum depth limits
-    depthSystem.setTargetDepth(-1000.0f); // Very deep
+TEST_F(DepthSystemTest, HandlesDepthChangeMovement) {
+    float initialDepth = depthSystem.getDepth();
+    depthSystem.setDepthChange(0.5f);
     
-    for (int i = 0; i < 1000; i++) { // Long simulation
-        depthSystem.update(state, 0.016f);
-    }
+    depthSystem.update(state, 1.0f);
     
-    // Should not exceed reasonable submarine depth limits
-    EXPECT_GT(state.currentDepthMeters, -300.0f); // Reasonable depth limit
+    EXPECT_GT(depthSystem.getDepth(), initialDepth);
+    EXPECT_STREQ(depthSystem.getMovementStatus(), "ASCENDING");
+}
+
+TEST_F(DepthSystemTest, HandlesDescendingMovement) {
+    float initialDepth = depthSystem.getDepth();
+    depthSystem.setDepthChange(-0.5f);
+    
+    depthSystem.update(state, 1.0f);
+    
+    EXPECT_LT(depthSystem.getDepth(), initialDepth);
+    EXPECT_STREQ(depthSystem.getMovementStatus(), "DESCENDING");
+}
+
+TEST_F(DepthSystemTest, HandlesHoldingPosition) {
+    depthSystem.setDepthChange(0.0f);
+    EXPECT_STREQ(depthSystem.getMovementStatus(), "HOLDING");
+}
+
+TEST_F(DepthSystemTest, ThrottleValueControlsDepthChange) {
+    depthSystem.setThrottleValue(0.7f);
+    float throttlePercentage = depthSystem.getThrottlePercentage();
+    EXPECT_GT(throttlePercentage, 50.0f);
+    
+    depthSystem.setThrottleValue(0.3f);
+    throttlePercentage = depthSystem.getThrottlePercentage();
+    EXPECT_LT(throttlePercentage, 50.0f);
+}
+
+TEST_F(DepthSystemTest, ClampsDepthChangeToValidRange) {
+    depthSystem.setDepthChange(2.0f);
+    EXPECT_STREQ(depthSystem.getMovementStatus(), "ASCENDING");
+    
+    depthSystem.setDepthChange(-2.0f);
+    EXPECT_STREQ(depthSystem.getMovementStatus(), "DESCENDING");
+}
+
+TEST_F(DepthSystemTest, ClearanceToleranceWorksCorrectly) {
+    float optimalDepth = depthSystem.getOptimalDepth();
+    
+    depthSystem.setDepth(optimalDepth + 4.9f);
+    depthSystem.update(state, 0.016f);
+    EXPECT_TRUE(state.depthClearanceMet);
+    
+    depthSystem.setDepth(optimalDepth - 4.9f);
+    depthSystem.update(state, 0.016f);
+    EXPECT_TRUE(state.depthClearanceMet);
+    
+    depthSystem.setDepth(optimalDepth + 5.1f);
+    depthSystem.update(state, 0.016f);
+    EXPECT_FALSE(state.depthClearanceMet);
 }
