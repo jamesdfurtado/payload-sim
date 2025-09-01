@@ -8,18 +8,17 @@
 class Button : public Widget {
 public:
     enum class State {
-        Normal,     // Default state
-        Hovered,    // Mouse hovering over button
-        Pressed,    // Button being pressed
-        Disabled,   // Button is disabled/greyed out
-        Active,     // Button is active/highlighted
-        Completed   // Button action completed
+        Normal,
+        Hovered,
+        Pressed,
+        Disabled,
+        Active,
+        Completed
     };
 
     enum class Shape {
-        Rectangle,  // Standard rectangular button
-        Square      // Square button (for keypad)
-    };
+        Rectangle,
+        Square
 
     struct ButtonStyle {
         Color backgroundColor = DARKGRAY;
@@ -33,33 +32,33 @@ public:
         bool centerText = true;
     };
 
-    // Constructor for general buttons
+    // normal button constructor
     explicit Button(std::string label, std::function<void()> onClick)
         : label(std::move(label)), onClick(std::move(onClick)), shape(Shape::Rectangle) {
         setupDefaultStyle();
     }
 
-    // Constructor for keypad buttons
+    // keypad button constructor
     Button(char key, std::function<void(char)> onKeyPress)
         : label(std::string(1, key)), onKeyPress(std::move(onKeyPress)), 
           shape(Shape::Square), isKeypadButton(true) {
         setupDefaultStyle();
     }
 
-    // Constructor for sequence buttons
+    // launch sequence button constructor
     Button(std::string label, std::function<void()> onClick, bool initiallyEnabled)
         : label(std::move(label)), onClick(std::move(onClick)), 
           shape(Shape::Rectangle), enabled(initiallyEnabled) {
         setupDefaultStyle();
     }
 
-    // State management
+    // button state control
     void setEnabled(bool enabled) { this->enabled = enabled; }
     void setState(State state) { this->state = state; }
     void setActive(bool active) { this->active = active; }
     void setCompleted(bool completed) { this->completed = completed; }
 
-    // Style customization
+    // appearance settings
     void setStyle(const ButtonStyle& style) { this->style = style; }
     void setColors(Color bg, Color border, Color text) {
         style.backgroundColor = bg;
@@ -70,29 +69,27 @@ public:
     void setTextSize(int size) { style.textSize = size; }
     void setBorderThickness(int thickness) { style.borderThickness = thickness; }
 
-    // Getters
+    // state requests
     bool isEnabled() const { return enabled; }
     State getState() const { return state; }
     bool isActive() const { return active; }
     bool isCompleted() const { return completed; }
     const std::string& getLabel() const { return label; }
 
-    // Update method
+    // frame update
     void update(float dt) {
-        // Button state updates can go here if needed
-        // For now, this is a placeholder for consistency with other widgets
+        // placeholder for future state logic
+        // don't delete this!!!
     }
 
     void draw() const override {
         if (!enabled) {
-            // Draw disabled state
             DrawRectangleRec(bounds, style.disabledColor);
             DrawRectangleLinesEx(bounds, style.borderThickness, GRAY);
             drawText(style.disabledColor);
             return;
         }
 
-        // Determine colors based on state
         Color bgColor = style.backgroundColor;
         Color borderColor = style.borderColor;
         Color textColor = style.textColor;
@@ -109,11 +106,11 @@ public:
             bgColor = ColorBrightness(bgColor, 0.8f);
         }
 
-        // Draw background and border
+        // render button shape
         DrawRectangleRec(bounds, bgColor);
         DrawRectangleLinesEx(bounds, style.borderThickness, borderColor);
 
-        // Draw text
+        // render label
         drawText(textColor);
     }
 
@@ -129,7 +126,7 @@ public:
         
         if (contains(pos)) {
             if (state == State::Pressed) {
-                // Handle different button types
+                // keypad vs normal buttons
                 if (isKeypadButton && onKeyPress) {
                     onKeyPress(label[0]);
                 } else if (onClick) {
