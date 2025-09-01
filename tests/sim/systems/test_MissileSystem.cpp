@@ -1,10 +1,9 @@
 #include <gtest/gtest.h>
 #include "sim/systems/MissileSystem.h"
-#include "sim/SimulationState.h"
 #include "sim/world/MissileManager.h"
 #include "sim/world/ContactManager.h"
 #include "sim/world/CrosshairManager.h"
-#include <raylib.h>
+#include "sim/SimulationState.h"
 
 class MissileSystemTest : public ::testing::Test {
 protected:
@@ -20,139 +19,128 @@ protected:
         crosshairManager = std::make_unique<CrosshairManager>(*contactManager);
         missileSystem = std::make_unique<MissileSystem>(*missileManager, *contactManager, *crosshairManager);
         
-        // Initialize state
+        state = {};
+        state.targetAcquired = true;
         state.missileLaunched = false;
         state.missileActive = false;
         state.explosionActive = false;
-        state.targetAcquired = false;
         state.missileTargetId = 0;
+    }
+    
+    uint32_t addTestContact() {
+        return contactManager->addContact({100.0f, 100.0f}, ContactType::ENEMY_SURFACE, "TestTarget");
     }
 };
 
-TEST_F(MissileSystemTest, InitializesCorrectly) {
-    EXPECT_STREQ(missileSystem->getName(), "MissileSystem");
+TEST_F(MissileSystemTest, TriggersLaunchWhenConditionsMet) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
+    state.missileLaunched = true;
+    
+    missileSystem->update(state, 0.016f);
+    
+    EXPECT_TRUE(state.missileActive);
+    EXPECT_EQ(state.missileTargetId, contactId);
+    EXPECT_FALSE(state.missileLaunched);
 }
 
-TEST_F(MissileSystemTest, RequiresTargetForLaunch) {
-    // Test that missile launch requires a target to be acquired
+TEST_F(MissileSystemTest, DoesNotLaunchWithoutTarget) {
     state.missileLaunched = true;
     state.targetAcquired = false;
     
     missileSystem->update(state, 0.016f);
     
-    // Missile should not be active without a target
-    EXPECT_FALSE(state.missileActive);
-}
-
-TEST_F(MissileSystemTest, LaunchesWithValidTarget) {
-    // Spawn an enemy contact
-    uint32_t contactId = contactManager->spawnContact();
-    
-    // Select the target with crosshair
-    Vector2 targetPos = contactManager->getActiveContacts()[0].position;
-    crosshairManager->setTargetingCirclePosition(targetPos);
-    crosshairManager->trackContact(contactId);
-    
-    // Set required conditions
-    state.targetAcquired = true;
-    state.missileLaunched = true;
-    
-    missileSystem->update(state, 0.016f);
-    
-    // Missile should now be active
-    EXPECT_TRUE(state.missileActive);
-    EXPECT_EQ(state.missileTargetId, contactId);
-    EXPECT_TRUE(missileManager->isMissileActive());
-}
-
-TEST_F(MissileSystemTest, MissileExplodesOnTargetLoss) {
-    // Setup: launch a missile with a valid target
-    uint32_t contactId = contactManager->spawnContact();
-    crosshairManager->trackContact(contactId);
-    state.targetAcquired = true;
-    state.missileLaunched = true;
-    state.missileActive = true;
-    state.missileTargetId = contactId;
-    
-    // Remove the contact (target destroyed)
-    contactManager->removeContact(contactId);
-    
-    missileSystem->update(state, 0.016f);
-    
-    // Missile should explode and become inactive
     EXPECT_FALSE(state.missileActive);
     EXPECT_EQ(state.missileTargetId, 0);
-    EXPECT_FALSE(missileManager->isMissileActive());
 }
 
-TEST_F(MissileSystemTest, MissilePhysicsUpdate) {
-    // Setup: active missile with target
-    uint32_t contactId = contactManager->spawnContact();
-    crosshairManager->trackContact(contactId);
-    state.targetAcquired = true;
+TEST_F(MissileSystemTest, DoesNotLaunchWithoutTrackedContact) {
+    state.missileLaunched = true;
+    crosshairManager->setTrackedContactId(0);
+    
+    missileSystem->update(state, 0.016f);
+    
+    EXPECT_FALSE(state.missileActive);
+    EXPECT_EQ(state.missileTargetId, 0);
+}
+
+TEST_F(MissileSystemTest, ExplodesWhenTargetLost) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
     state.missileLaunched = true;
     
     missileSystem->update(state, 0.016f);
-    
-    // Missile should be active
     EXPECT_TRUE(state.missileActive);
     
-    // Update multiple frames - missile should continue tracking
-    for (int i = 0; i < 10; i++) {
-        contactManager->updateContactPositions(0.016f);
-        missileSystem->update(state, 0.016f);
-        
-        // Missile should remain active while target exists
-        EXPECT_TRUE(state.missileActive);
-    }
+    crosshairManager->setTrackedContactId(0);
+    missileSystem->update(state, 0.016f);
+    
+    EXPECT_FALSE(state.missileActive);
+    EXPECT_EQ(state.missileTargetId, 0);
 }
 
-TEST_F(MissileSystemTest, HandlesMultipleContactScenario) {
-    // Spawn multiple contacts
-    uint32_t enemy1 = contactManager->spawnContact();
-    uint32_t enemy2 = contactManager->spawnContact();
-    uint32_t enemy3 = contactManager->spawnContact();
-    
-    // Target the second enemy
-    crosshairManager->trackContact(enemy2);
-    state.targetAcquired = true;
+TEST_F(MissileSystemTest, ExplodesWhenTrackedContactDies) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
     state.missileLaunched = true;
     
     missileSystem->update(state, 0.016f);
-    
-    // Should target the correct enemy
     EXPECT_TRUE(state.missileActive);
-    EXPECT_EQ(state.missileTargetId, enemy2);
     
-    // Remove other contacts - missile should still track enemy2
-    contactManager->removeContact(enemy1);
-    contactManager->removeContact(enemy3);
-    
-    missileSystem->update(state, 0.016f);
-    
-    // Missile should still be active, targeting enemy2
-    EXPECT_TRUE(state.missileActive);
-    EXPECT_EQ(state.missileTargetId, enemy2);
-}
-
-TEST_F(MissileSystemTest, ExplosionManagerIntegration) {
-    // Setup missile with target
-    uint32_t contactId = contactManager->spawnContact();
-    crosshairManager->trackContact(contactId);
-    state.targetAcquired = true;
-    state.missileLaunched = true;
-    
-    missileSystem->update(state, 0.016f);
-    
-    // Force missile explosion by removing target
     contactManager->removeContact(contactId);
     missileSystem->update(state, 0.016f);
     
-    // Update explosions for a few frames
-    for (int i = 0; i < 5; i++) {
+    EXPECT_FALSE(state.missileActive);
+    EXPECT_EQ(state.missileTargetId, 0);
+}
+
+TEST_F(MissileSystemTest, UpdatesGuidanceForValidTarget) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
+    state.missileLaunched = true;
+    
+    missileSystem->update(state, 0.016f);
+    EXPECT_TRUE(state.missileActive);
+    
+    missileSystem->update(state, 0.016f);
+    
+    EXPECT_TRUE(state.missileActive);
+    EXPECT_EQ(state.missileTargetId, contactId);
+}
+
+TEST_F(MissileSystemTest, HandlesMissileContactCollisions) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
+    state.missileLaunched = true;
+    
+    missileSystem->update(state, 0.016f);
+    
+    for (int i = 0; i < 200; i++) {
         missileSystem->update(state, 0.016f);
+        if (!contactManager->isContactAlive(contactId)) {
+            break;
+        }
     }
     
-    // Test passes if no crashes occur during explosion handling
-    EXPECT_FALSE(state.missileActive);
+    EXPECT_FALSE(contactManager->isContactAlive(contactId));
+}
+
+TEST_F(MissileSystemTest, UpdatesExplosionState) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
+    state.missileLaunched = true;
+    
+    missileSystem->update(state, 0.016f);
+    crosshairManager->setTrackedContactId(0);
+    missileSystem->update(state, 0.016f);
+    
+    bool hadExplosion = false;
+    for (int i = 0; i < 100; i++) {
+        missileSystem->update(state, 0.016f);
+        if (state.explosionActive) {
+            hadExplosion = true;
+        }
+    }
+    
+    EXPECT_TRUE(hadExplosion);
 }
