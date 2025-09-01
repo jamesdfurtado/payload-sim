@@ -3,11 +3,11 @@
 #include "../../SimulationState.h"
 #include <iostream>
 
-// Survey for all flags to be met to remain authorized
+// survey for all flags to be met to remain authorized
 static PhaseSurveillance authorizedSurveillance = []() {
     PhaseSurveillance surveillance;
     
-    // Conditions to be met
+    // conditions to be met
     surveillance.addCondition(
         LaunchSequenceHandler::checkTargetValidated, 
         "Target no longer validated. "
