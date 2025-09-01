@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submarine Payload Launch Simulator</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #000000;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    canvas.emscripten {
+      display: block;
+      margin: 0 auto;
+      background-color: #000000;
+    }
+
+    .status {
+      margin-top: 10px;
+    }
+
+    .github-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 15px;
+      background: #333333;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+
+    .github-link:hover {
+      background: #555555;
+    }
+  </style>
+</head>
+<body>
+  <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+  
+  <div class="status">
+    <div id="status">Loading...</div>
+  </div>
+  
+  <a href="https://github.com/{{ GITHUB_USERNAME }}/payload-sim" target="_blank" class="github-link">
+    View Source Code
+  </a>
+
+  <script type='text/javascript'>
+    var statusElement = document.getElementById('status');
+
+    var Module = {
+      preRun: [],
+      postRun: [],
+      print: (function() {
+        return function(text) {
+          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+          console.log(text);
+        };
+      })(),
+      canvas: (function() {
+        var canvas = document.getElementById('canvas');
+        canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+        return canvas;
+      })(),
+      setStatus: function(text) {
+        if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+        if (text === Module.setStatus.last.text) return;
+        Module.setStatus.last.time = Date.now();
+        Module.setStatus.last.text = text;
+        statusElement.innerHTML = text;
+      },
+      totalDependencies: 0,
+      monitorRunDependencies: function(left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        Module.setStatus(left ? 'Loading (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'Ready');
+        if (left == 0) {
+          statusElement.innerHTML = 'Ready';
+        }
+      }
+    };
+
+    Module.setStatus('Loading...');
+    window.onerror = function() {
+      Module.setStatus('Error - Check console');
+      Module.setStatus = function(text) {
+        if (text) console.error('[post-exception status] ' + text);
+      };
+    };
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>
