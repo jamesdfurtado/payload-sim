@@ -3,10 +3,7 @@
 KeypadPanel::KeypadPanel(KeypadCallback onKeyPress, BackspaceCallback onBackspace)
     : keypadCallback(onKeyPress), backspaceCallback(onBackspace) {
     
-    // Create keypad
     createKeypad();
-    
-    // Set initial bounds and layout (smaller size)
     setBounds(Rectangle{0, 0, 120, 160});
 }
 
@@ -16,17 +13,15 @@ void KeypadPanel::setBounds(Rectangle newBounds) {
 }
 
 void KeypadPanel::setupLayout() {
-    // Calculate layout for 3x3 grid with backspace
     float margin = 10;
     float buttonSize = (bounds.width - 2 * margin) / 3;
     
-    // Keypad area
+    // button layout area
     keypadArea.x = bounds.x + margin;
     keypadArea.y = bounds.y + margin;
     keypadArea.width = bounds.width - 2 * margin;
     keypadArea.height = bounds.height - 2 * margin;
     
-    // Position keypad buttons (3x3 grid + backspace)
     float keypadX = keypadArea.x;
     float keypadY = keypadArea.y;
     
@@ -36,8 +31,8 @@ void KeypadPanel::setupLayout() {
             keypadY += buttonSize + margin;
         }
         
-        // Special positioning for backspace button (bottom right)
-        if (i == 10) { // Backspace button
+        // backspace logic handling
+        if (i == 10) {
             keypadButtons[i]->setBounds(Rectangle{
                 keypadArea.x + 2 * (buttonSize + margin),
                 keypadY,
@@ -57,11 +52,11 @@ void KeypadPanel::setupLayout() {
 }
 
 void KeypadPanel::createKeypad() {
-    // Create numeric keypad buttons (1-9, 0, backspace)
+    // number pad layout
     std::vector<char> keys = {'7', '8', '9', '4', '5', '6', '1', '2', '3', '0'};
     
     for (char key : keys) {
-        // Number button
+        // digit button
         auto numBtn = std::make_unique<Button>(key, [this, key](char pressedKey) { 
             if (keypadCallback) {
                 keypadCallback(pressedKey); 
@@ -71,7 +66,7 @@ void KeypadPanel::createKeypad() {
         keypadButtons.push_back(std::move(numBtn));
     }
     
-    // Create backspace button separately
+    // backspace button
     auto backspaceBtn = std::make_unique<Button>("<", [this]() { 
         if (backspaceCallback) {
             backspaceCallback(); 
@@ -83,17 +78,16 @@ void KeypadPanel::createKeypad() {
 }
 
 void KeypadPanel::update(float dt) {
-    // Update all keypad buttons
+    // update button states
     for (auto& button : keypadButtons) {
         button->update(dt);
     }
 }
 
 void KeypadPanel::draw() const {
-    // Draw title (moved up a bit)
     DrawText("KEYPAD", bounds.x + 10, bounds.y - 15, 16, RAYWHITE);
     
-    // Draw keypad buttons
+    // render all buttons
     for (const auto& button : keypadButtons) {
         button->draw();
     }
