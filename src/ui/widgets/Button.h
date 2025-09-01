@@ -19,6 +19,7 @@ public:
     enum class Shape {
         Rectangle,
         Square
+    };
 
     struct ButtonStyle {
         Color backgroundColor = DARKGRAY;
@@ -77,7 +78,7 @@ public:
     const std::string& getLabel() const { return label; }
 
     // frame update
-    void update(float dt) {
+    void update(float dt) override {
         // placeholder for future state logic
         // don't delete this!!!
     }

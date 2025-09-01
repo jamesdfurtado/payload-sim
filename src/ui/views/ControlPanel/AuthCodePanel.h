@@ -20,7 +20,7 @@ public:
     bool onMouseMove(Vector2 mousePos) override;
 
     // state management
-    void update(float dt);
+    void update(float dt) override;
     void setBounds(Rectangle newBounds);
     
     // public interface

@@ -17,6 +17,25 @@
 #include "sim/world/CrosshairManager.h"
 #include "ui/UIRoot.h"
 
+#ifdef PLATFORM_WEB
+    #include <emscripten/emscripten.h>
+#endif
+
+// Global variables for web platform
+SimulationEngine* g_engine = nullptr;
+UIRoot* g_ui = nullptr;
+
+void UpdateDrawFrame() {
+    const float dt = GetFrameTime();
+    g_engine->update(dt);
+    g_ui->update(dt);
+
+    BeginDrawing();
+    ClearBackground(BLACK);
+    g_ui->draw();
+    EndDrawing();
+}
+
 int main() {
     const int screenWidth = 1280;
     const int screenHeight = 720;
@@ -59,16 +78,17 @@ int main() {
     // UI root with direct pointers to systems/state
     UIRoot ui(engine, sonar.get(), power.get(), depth.get(), targeting.get(), launchSequence.get(), environment.get(), contacts.get(), crosshairManager.get(), missiles.get());
 
-    while (!WindowShouldClose()) {
-        const float dt = GetFrameTime();
-        engine.update(dt);
-        ui.update(dt);
+    // Set global pointers for web platform
+    g_engine = &engine;
+    g_ui = &ui;
 
-        BeginDrawing();
-        ClearBackground(BLACK);
-        ui.draw();
-        EndDrawing();
+#ifdef PLATFORM_WEB
+    emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
+#else
+    while (!WindowShouldClose()) {
+        UpdateDrawFrame();
     }
+#endif
 
     CloseWindow();
     return 0;

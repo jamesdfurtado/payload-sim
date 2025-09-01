@@ -17,7 +17,7 @@ public:
     bool onMouseMove(Vector2 mousePos) override;
 
     // State management
-    void update(float dt);
+    void update(float dt) override;
     void setBounds(Rectangle newBounds);
 
 private:
