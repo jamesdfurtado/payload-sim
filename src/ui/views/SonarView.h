@@ -8,15 +8,15 @@ public:
     explicit SonarView(ContactManager& contacts) : contacts(contacts) {}
 
     void draw() const override {
-        // Draw panel, grid, and submarine icon
+        // sonar display with sub icon
         drawSonar(bounds);
     }
 
-    // Get the current bounds for contact overlay rendering
+    // bounds for overlays
     const Rectangle& getBounds() const { return bounds; }
 
 private:
-    // Coordinate transform: world (-600..600, -360..360) to screen inside rectangle
+    // world to screen conversion
     static Vector2 worldToScreen(Vector2 world, const Rectangle& r) {
         float nx = (world.x + 600.0f) / 1200.0f;
         float ny = (world.y + 360.0f) / 720.0f;
@@ -70,7 +70,7 @@ private:
     void drawDiagonalLines(Rectangle r) const {
         Color lineColor = Fade(SKYBLUE, 0.15f);
         
-        // Simple diagonal lines from corner to corner
+        // corner to corner lines
         DrawLineEx(Vector2{r.x, r.y}, Vector2{r.x + r.width, r.y + r.height}, 1, lineColor);
         DrawLineEx(Vector2{r.x + r.width, r.y}, Vector2{r.x, r.y + r.height}, 1, lineColor);
     }
