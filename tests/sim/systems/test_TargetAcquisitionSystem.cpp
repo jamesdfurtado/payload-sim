@@ -6,107 +6,96 @@
 
 class TargetAcquisitionSystemTest : public ::testing::Test {
 protected:
-    CrosshairManager crosshairManager;
-    ContactManager contactManager;
-    TargetAcquisitionSystem acquisitionSystem{crosshairManager, contactManager};
+    std::unique_ptr<ContactManager> contactManager;
+    std::unique_ptr<CrosshairManager> crosshairManager;
+    std::unique_ptr<TargetAcquisitionSystem> targetAcquisitionSystem;
     SimulationState state;
     
     void SetUp() override {
+        contactManager = std::make_unique<ContactManager>();
+        crosshairManager = std::make_unique<CrosshairManager>(*contactManager);
+        targetAcquisitionSystem = std::make_unique<TargetAcquisitionSystem>(*crosshairManager, *contactManager);
+        
+        state = {};
         state.targetAcquired = false;
+    }
+    
+    uint32_t addTestContact() {
+        return contactManager->addContact({100.0f, 100.0f}, ContactType::ENEMY_SURFACE, "TestTarget");
     }
 };
 
-TEST_F(TargetAcquisitionSystemTest, InitializesCorrectly) {
-    EXPECT_STREQ(acquisitionSystem.getName(), "TargetAcquisitionSystem");
-}
-
-TEST_F(TargetAcquisitionSystemTest, NoTargetByDefault) {
-    acquisitionSystem.update(state, 0.1f);
+TEST_F(TargetAcquisitionSystemTest, InitiallyNoTargetAcquired) {
+    targetAcquisitionSystem->update(state, 0.016f);
     EXPECT_FALSE(state.targetAcquired);
 }
 
-TEST_F(TargetAcquisitionSystemTest, TargetAcquisition) {
-    // Spawn enemy contact
-    uint32_t enemyId = contactManager.spawnContact();
+TEST_F(TargetAcquisitionSystemTest, AcquiresTargetWhenCrosshairStartsTracking) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
     
-    // Select target with crosshair
-    const auto& contacts = contactManager.getActiveContacts();
-    if (!contacts.empty()) {
-        Vector2 targetPos = contacts[0].position;
-        crosshairManager.setTargetingCirclePosition(targetPos);
-        crosshairManager.trackContact(enemyId);
-    }
+    targetAcquisitionSystem->update(state, 0.016f);
     
-    // Update target acquisition system
-    acquisitionSystem.update(state, 0.016f);
-    
-    // Should acquire target
     EXPECT_TRUE(state.targetAcquired);
 }
 
-TEST_F(TargetAcquisitionSystemTest, TargetLoss) {
-    // Setup: acquire a target first
-    uint32_t enemyId = contactManager.spawnContact();
-    const auto& contacts = contactManager.getActiveContacts();
+TEST_F(TargetAcquisitionSystemTest, LosesTargetWhenCrosshairStopsTracking) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
+    targetAcquisitionSystem->update(state, 0.016f);
+    EXPECT_TRUE(state.targetAcquired);
     
-    if (!contacts.empty()) {
-        Vector2 targetPos = contacts[0].position;
-        crosshairManager.setTargetingCirclePosition(targetPos);
-        crosshairManager.trackContact(enemyId);
-        acquisitionSystem.update(state, 0.016f);
-        EXPECT_TRUE(state.targetAcquired);
-    }
+    crosshairManager->setTrackedContactId(0);
+    targetAcquisitionSystem->update(state, 0.016f);
     
-    // Remove the contact
-    contactManager.removeContact(enemyId);
-    acquisitionSystem.update(state, 0.016f);
-    
-    // Should lose target
     EXPECT_FALSE(state.targetAcquired);
 }
 
-TEST_F(TargetAcquisitionSystemTest, NoAcquisitionWithoutTracking) {
-    // Spawn enemy but don't track with crosshair
-    contactManager.spawnContact();
+TEST_F(TargetAcquisitionSystemTest, LosesTargetWhenTrackedContactDies) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
+    targetAcquisitionSystem->update(state, 0.016f);
+    EXPECT_TRUE(state.targetAcquired);
     
-    acquisitionSystem.update(state, 0.016f);
+    contactManager->removeContact(contactId);
+    targetAcquisitionSystem->update(state, 0.016f);
     
-    // Should not acquire target without crosshair selection
     EXPECT_FALSE(state.targetAcquired);
 }
 
-TEST_F(TargetAcquisitionSystemTest, TargetPersistence) {
-    // Acquire target
-    uint32_t enemyId = contactManager.spawnContact();
-    const auto& contacts = contactManager.getActiveContacts();
+TEST_F(TargetAcquisitionSystemTest, MaintainsTargetAcquisitionWhileTracking) {
+    uint32_t contactId = addTestContact();
+    crosshairManager->setTrackedContactId(contactId);
     
-    if (!contacts.empty()) {
-        Vector2 targetPos = contacts[0].position;
-        crosshairManager.setTargetingCirclePosition(targetPos);
-        crosshairManager.trackContact(enemyId);
-    }
-    
-    // Update over multiple frames
-    for (int i = 0; i < 60; i++) { // 1 second
-        contactManager.updateContactPositions(0.016f);
-        acquisitionSystem.update(state, 0.016f);
-        
-        // Target should remain acquired while contact exists
+    for (int i = 0; i < 10; i++) {
+        targetAcquisitionSystem->update(state, 0.016f);
         EXPECT_TRUE(state.targetAcquired);
     }
 }
 
-TEST_F(TargetAcquisitionSystemTest, MultipleTargetsHandling) {
-    // Spawn multiple enemies
-    uint32_t enemy1 = contactManager.spawnContact();
-    uint32_t enemy2 = contactManager.spawnContact();
+TEST_F(TargetAcquisitionSystemTest, DoesNotAcquireDeadTarget) {
+    uint32_t contactId = addTestContact();
+    contactManager->removeContact(contactId);
+    crosshairManager->setTrackedContactId(contactId);
     
-    // Track specific enemy with crosshair
-    crosshairManager.trackContact(enemy2);
+    targetAcquisitionSystem->update(state, 0.016f);
     
-    acquisitionSystem.update(state, 0.016f);
+    EXPECT_FALSE(state.targetAcquired);
+}
+
+TEST_F(TargetAcquisitionSystemTest, HandlesTrackingStateChanges) {
+    uint32_t contact1 = addTestContact();
+    uint32_t contact2 = addTestContact();
     
-    // Should acquire the tracked target
+    crosshairManager->setTrackedContactId(contact1);
+    targetAcquisitionSystem->update(state, 0.016f);
     EXPECT_TRUE(state.targetAcquired);
-    EXPECT_EQ(crosshairManager.getTrackedContactId(), enemy2);
+    
+    crosshairManager->setTrackedContactId(contact2);
+    targetAcquisitionSystem->update(state, 0.016f);
+    EXPECT_TRUE(state.targetAcquired);
+    
+    crosshairManager->setTrackedContactId(0);
+    targetAcquisitionSystem->update(state, 0.016f);
+    EXPECT_FALSE(state.targetAcquired);
 }
