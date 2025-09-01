@@ -4,7 +4,7 @@
 ControlPanel::ControlPanel(SimulationEngine& engine, LaunchSequenceHandler* launchSequence) 
     : sequenceHandler(launchSequence) {
     
-    // Create sub-panels
+    // sub panels
     launchSequencePanel = std::make_unique<LaunchSequencePanel>(sequenceHandler);
     keypadPanel = std::make_unique<KeypadPanel>(
         [this](char key) { authCodePanel->handleKeypadInput(key); },
@@ -14,10 +14,9 @@ ControlPanel::ControlPanel(SimulationEngine& engine, LaunchSequenceHandler* laun
         [this](const std::string& code) { handleAuthCodeSubmit(code); }
     );
     
-    // Create phase display
+    // phase display
     phaseDisplay = std::make_unique<LaunchPhaseDisplay>();
     
-    // Set initial bounds and layout
     setBounds(Rectangle{0, 0, 400, 600});
 }
 
@@ -27,42 +26,39 @@ void ControlPanel::setBounds(Rectangle newBounds) {
 }
 
 void ControlPanel::setupLayout() {
-    // Calculate layout areas for horizontal layout
     float margin = 15;
-    float leftWidth = bounds.width * 0.35f;  // Left side for launch sequence
-    float rightWidth = bounds.width * 0.35f; // Right side for auth and keypad
-    float centerGap = bounds.width * 0.20f;  // Center gap for separation
+    float leftWidth = bounds.width * 0.35f;  // launch buttons
+    float rightWidth = bounds.width * 0.35f; // auth and keypad
+    float centerGap = bounds.width * 0.20f;  // visual separation
     
-    // Left panel area (launch sequence)
+    // left side: launch controls
     leftPanelArea.x = bounds.x + margin;
     leftPanelArea.y = bounds.y + margin;
     leftPanelArea.width = leftWidth;
     leftPanelArea.height = bounds.height - 2 * margin;
     
-    // Right panel area (auth + keypad)
+    // righ side: auth controls
     rightPanelArea.x = bounds.x + leftWidth + centerGap + margin;
     rightPanelArea.y = bounds.y + margin;
     rightPanelArea.width = rightWidth;
     rightPanelArea.height = bounds.height - 2 * margin;
     
-    // Set bounds for sub-panels
     launchSequencePanel->setBounds(leftPanelArea);
     
-    // Set bounds for phase display (above launch sequence panel)
+    // phase display at top left
     Rectangle phaseDisplayArea = leftPanelArea;
-    phaseDisplayArea.y = leftPanelArea.y + 50; // Position 200px up from bottom (was bottom - 50, now top + 50)
+    phaseDisplayArea.y = leftPanelArea.y + 50;
     phaseDisplayArea.height = 50;
     phaseDisplay->setBounds(phaseDisplayArea);
     
-    // Split right panel between auth and keypad
+    // divide right side
     Rectangle authArea = rightPanelArea;
     authArea.height = 100;
     
     Rectangle keypadArea = rightPanelArea;
-    keypadArea.y = authArea.y + authArea.height + margin - 20; // Move keypad up by 20px
-    keypadArea.height = 160; // Fixed height for keypad
-    keypadArea.width = 120;  // Fixed width for keypad
-    // Center the keypad horizontally in the right panel
+    keypadArea.y = authArea.y + authArea.height + margin - 20;
+    keypadArea.height = 160;
+    keypadArea.width = 120;
     keypadArea.x = rightPanelArea.x + (rightPanelArea.width - keypadArea.width) / 2;
     
     authCodePanel->setBounds(authArea);
@@ -76,46 +72,38 @@ void ControlPanel::handleAuthCodeSubmit(const std::string& code) {
 }
 
 void ControlPanel::update(float dt) {
-    // Update phase display with current phase
+    // display current launch phase
     if (sequenceHandler) {
         phaseDisplay->setCurrentPhase(sequenceHandler->getCurrentPhaseString());
         
-        // Update auth code display with current generated code
+        // show current auth code
         const std::string& currentAuthCode = sequenceHandler->getAuthCode();
         if (!currentAuthCode.empty()) {
             authCodePanel->setAuthCode(currentAuthCode);
         } else {
-            // Clear the auth code display when no code is available
             authCodePanel->clearAuthCodeDisplay();
-            // Also clear the input field when auth code is cleared
             authCodePanel->clearInput();
         }
     }
     
-    // Update all sub-panels
     launchSequencePanel->update(dt);
     keypadPanel->update(dt);
     authCodePanel->update(dt);
 }
 
 void ControlPanel::draw() const {
-    // Draw background
     DrawRectangleRec(bounds, {15, 15, 15, 255});
     
-    // Draw title
     DrawText("CONTROL PANEL", bounds.x + 20, bounds.y + 10, 20, RAYWHITE);
 
-    // Draw all sub-panels
     launchSequencePanel->draw();
     keypadPanel->draw();
     authCodePanel->draw();
-    
-    // Draw phase display
     phaseDisplay->draw();
 }
 
 bool ControlPanel::onMouseDown(Vector2 mousePos) {
-    // Delegate to sub-panels
+    // pass to sub panels
     if (launchSequencePanel->onMouseDown(mousePos)) return true;
     if (keypadPanel->onMouseDown(mousePos)) return true;
     if (authCodePanel->onMouseDown(mousePos)) return true;
@@ -123,7 +111,7 @@ bool ControlPanel::onMouseDown(Vector2 mousePos) {
 }
 
 bool ControlPanel::onMouseUp(Vector2 mousePos) {
-    // Delegate to sub-panels
+    // pass to sub panels
     if (launchSequencePanel->onMouseUp(mousePos)) return true;
     if (keypadPanel->onMouseUp(mousePos)) return true;
     if (authCodePanel->onMouseUp(mousePos)) return true;
@@ -131,7 +119,7 @@ bool ControlPanel::onMouseUp(Vector2 mousePos) {
 }
 
 bool ControlPanel::onMouseMove(Vector2 mousePos) {
-    // Delegate to sub-panels
+    // pass to sub panels
     if (launchSequencePanel->onMouseMove(mousePos)) return true;
     if (keypadPanel->onMouseMove(mousePos)) return true;
     if (authCodePanel->onMouseMove(mousePos)) return true;
@@ -147,5 +135,5 @@ void ControlPanel::handleBackspace() {
 }
 
 void ControlPanel::onAuthorize() {
-    // This is now handled by the LaunchSequencePanel directly
+    // leftover function i don't feel like deleting. lol
 }

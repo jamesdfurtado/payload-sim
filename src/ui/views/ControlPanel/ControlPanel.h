@@ -25,25 +25,25 @@ public:
     void setBounds(Rectangle newBounds);
 
 private:
-    // Launch sequence handler (from UIRoot)
+    // launch sequence logic
     LaunchSequenceHandler* sequenceHandler;
     
-    // Sub-panels
+    // child panels
     std::unique_ptr<LaunchSequencePanel> launchSequencePanel;
     std::unique_ptr<KeypadPanel> keypadPanel;
     std::unique_ptr<AuthCodePanel> authCodePanel;
     std::unique_ptr<LaunchPhaseDisplay> phaseDisplay;
     
-    // Layout
+    // panel areas
     Rectangle leftPanelArea;
     Rectangle rightPanelArea;
     
-    // Helper methods
+    // internal helpers
     void setupLayout();
     void handleKeypadInput(char key);
     void handleBackspace();
     void handleAuthCodeSubmit(const std::string& code);
     
-    // Button callbacks
+    // button handlers
     void onAuthorize();
 };
