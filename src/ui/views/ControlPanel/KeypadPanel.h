@@ -25,17 +25,14 @@ public:
     void setBounds(Rectangle newBounds);
 
 private:
-    // Callbacks
+    // button handlers
     KeypadCallback keypadCallback;
     BackspaceCallback backspaceCallback;
     
-    // Keypad buttons
+    // keypad buttons
     std::vector<std::unique_ptr<Button>> keypadButtons;
-    
-    // Layout
     Rectangle keypadArea;
-    
-    // Helper methods
+
     void setupLayout();
     void createKeypad();
 };
