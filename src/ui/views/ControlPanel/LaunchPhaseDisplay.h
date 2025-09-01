@@ -13,10 +13,7 @@ public:
     bool onMouseUp(Vector2 mousePos) override { return false; }
     bool onMouseMove(Vector2 mousePos) override { return false; }
     
-    // Set the current phase text
     void setCurrentPhase(const char* phaseText);
-    
-    // Get the current phase text
     const char* getCurrentPhase() const { return currentPhaseText; }
 
 private:
