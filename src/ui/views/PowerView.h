@@ -12,44 +12,37 @@ public:
     PowerView(SimulationEngine& engine, PowerSystem& power) 
         : engine(engine), power(power) {
         
-        // Create the weapons power switch
+        // weapons power toggle
         weaponsSwitch = std::make_unique<Switch>(false, [this](bool state) {
-            // Delegate power state management to PowerSystem
             this->power.setPowerState(state);
         });
     }
 
     void update(float dt) override {
-        // Synchronize switch state with PowerSystem state
         bool powerSystemState = (power.getPowerLevel() > 0.5f);
         if (weaponsSwitch->getState() != powerSystemState) {
-            weaponsSwitch->setStateQuiet(powerSystemState); // Update without triggering callback
+            weaponsSwitch->setStateQuiet(powerSystemState); // silent update
         }
     }
 
     void draw() const override {
         const auto& s = engine.getState();
         
-        // Draw blue background panel
+        // draw power panel
         DrawRectangleRec(bounds, Fade(DARKBLUE, 0.3f));
-        
-        // Draw title
         DrawText("Power", (int)bounds.x + 10, (int)bounds.y + 8, 20, SKYBLUE);
         
-        // Draw battery status
+        // battery percentage
         int batteryPercent = (int)power.getBatteryLevel();
         DrawText(("Battery: " + std::to_string(batteryPercent) + "%").c_str(), 
                 (int)bounds.x + 10, (int)bounds.y + 40, 18, RAYWHITE);
         
-        // Draw weapons power label
         DrawText("Weapons Power", (int)bounds.x + 10, (int)bounds.y + 64, 18, RAYWHITE);
         
-        // Position and draw the switch
         Rectangle switchRect = { bounds.x + 200, bounds.y + 35, 120, 40 };
         weaponsSwitch->setBounds(switchRect);
         weaponsSwitch->draw();
         
-        // Draw instruction text
         DrawText("Click to toggle", (int)switchRect.x, (int)(switchRect.y + switchRect.height + 5), 
                 14, LIGHTGRAY);
     }
