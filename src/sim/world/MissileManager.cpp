@@ -177,47 +177,51 @@ void MissileManager::createExplosion(Vector2 position) {
     activeExplosions.push_back(explosion);
 }
 
+// heat seeking missile calculations
 Vector2 MissileManager::calculateHeatSeekingVelocity(Vector2 missilePos, Vector2 missileVel, Vector2 targetPos, float maxTurnRate, float dt) {
-    // Calculate missile direction
+    // vector from missile to target
     Vector2 toTarget = { targetPos.x - missilePos.x, targetPos.y - missilePos.y };
     float targetDistance = sqrtf(toTarget.x * toTarget.x + toTarget.y * toTarget.y);
-    
+
     if (targetDistance < 1.0f) {
-        return missileVel;  // Already very close
+        return missileVel;
     }
-    
+
+    // get desired direction towards target
     Vector2 desiredDir = { toTarget.x / targetDistance, toTarget.y / targetDistance };
-    
+
+    // get current speed and direction
     float currentSpeed = sqrtf(missileVel.x * missileVel.x + missileVel.y * missileVel.y);
     Vector2 currentDir = { missileVel.x / currentSpeed, missileVel.y / currentSpeed };
-    
+
+    // compute angle between current direction and desired direction
     float dotProduct = currentDir.x * desiredDir.x + currentDir.y * desiredDir.y;
-    dotProduct = std::max(-1.0f, std::min(1.0f, dotProduct));  // Clamp to [-1, 1]
+    dotProduct = std::max(-1.0f, std::min(1.0f, dotProduct));  // Clamp for safety
     float angleDiff = acosf(dotProduct);
-    
-    // limit turn rate for natural motion
+
+    // calculate turning radius
     float maxAngleChange = maxTurnRate * dt;
     if (angleDiff > maxAngleChange) {
         angleDiff = maxAngleChange;
     }
-    
+
+    // determine turn left or right
     float crossZ = currentDir.x * desiredDir.y - currentDir.y * desiredDir.x;
     if (crossZ < 0) angleDiff = -angleDiff;
-    
+
     float cosAngle = cosf(angleDiff);
     float sinAngle = sinf(angleDiff);
-    
     Vector2 newVel = {
         missileVel.x * cosAngle - missileVel.y * sinAngle,
         missileVel.x * sinAngle + missileVel.y * cosAngle
     };
-    
+
     float newSpeed = sqrtf(newVel.x * newVel.x + newVel.y * newVel.y);
     if (newSpeed > 0) {
         newVel.x = (newVel.x / newSpeed) * currentSpeed;
         newVel.y = (newVel.y / newSpeed) * currentSpeed;
     }
-    
+
     return newVel;
 }
 
