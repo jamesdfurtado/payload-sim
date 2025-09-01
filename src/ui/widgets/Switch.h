@@ -16,24 +16,21 @@ public:
     }
     
     void setStateQuiet(bool state) {
-        isOn = state; // Set state without triggering callback
+        isOn = state;
     }
     bool getState() const { return isOn; }
     void setOnChange(std::function<void(bool)> fn) { onChange = std::move(fn); }
 
     void draw() const override {
-        // Draw slider background (grey when OFF, green when ON)
         Color sliderColor = isOn ? GREEN : DARKGRAY;
         DrawRectangleRec(bounds, sliderColor);
         DrawRectangleLinesEx(bounds, 2, isOn ? RAYWHITE : GRAY);
         
-        // Draw slider handle (slides left/right)
         float handleX = isOn ? (bounds.x + bounds.width - 20) : (bounds.x + 2);
         Rectangle handleRect = { handleX, bounds.y + 2, 16, bounds.height - 4 };
         DrawRectangleRec(handleRect, RAYWHITE);
         DrawRectangleLinesEx(handleRect, 1, BLACK);
         
-        // Draw ON/OFF text
         const char* buttonText = isOn ? "ON" : "OFF";
         int textWidth = MeasureText(buttonText, 16);
         int textX = (int)(bounds.x + (bounds.width - textWidth) / 2);
