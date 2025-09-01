@@ -16,16 +16,15 @@ uint32_t MissileManager::launchMissile(Vector2 startPosition, uint32_t targetId)
     missile.id = nextMissileId++;
     missile.position = startPosition;
     missile.targetId = targetId;
-    missile.speed = 160.0f;  // Very fast missile speed (doubled)
-    missile.maxTurnRate = 3.0f;  // Radians per second turn rate
-    missile.lifetime = 15.0f;  // 15 seconds max flight time
+    missile.speed = 160.0f;
+    missile.maxTurnRate = 3.0f;
+    missile.lifetime = 15.0f;
     missile.active = true;
     
-    // Initial velocity in a random direction (will be corrected by heat-seeking)
+    // start missile in random direction-- then correct path
     float randomAngle = ((float)GetRandomValue(0, 1000) / 1000.0f) * 2.0f * PI;
     missile.velocity = { cosf(randomAngle) * missile.speed, sinf(randomAngle) * missile.speed };
     
-    // Initialize trail with starting position
     missile.trailPoints.clear();
     missile.trailPoints.push_back(missile.position);
     
@@ -46,15 +45,14 @@ void MissileManager::clearAllMissiles() {
     activeExplosions.clear();
 }
 
+// explodes all missiles
 void MissileManager::explodeAllMissiles() {
-    // Create explosions at each active missile position
     for (const auto& missile : activeMissiles) {
         if (missile.active) {
             createExplosion(missile.position);
         }
     }
     
-    // Clear all missiles after creating explosions
     activeMissiles.clear();
 }
 
@@ -65,52 +63,43 @@ bool MissileManager::isMissileActive(uint32_t id) const {
     return false;
 }
 
+// updates missile frame-by-frame
 void MissileManager::updateMissilePhysics(float dt, const std::vector<Vector2>& targetPositions) {
     for (auto& missile : activeMissiles) {
         if (!missile.active) continue;
         
-        // Update lifetime
         missile.lifetime -= dt;
         if (missile.lifetime <= 0.0f) {
             missile.active = false;
             continue;
         }
         
-        // Find target position (assuming targetId corresponds to index in targetPositions)
+        // guide toward target
         if (missile.targetId < targetPositions.size()) {
             Vector2 targetPos = targetPositions[missile.targetId];
             
-            // Calculate heat-seeking velocity
             missile.velocity = calculateHeatSeekingVelocity(
                 missile.position, missile.velocity, targetPos, missile.maxTurnRate, dt
             );
-        } else {
-            // Target is no longer in the list (left screen or was destroyed)
-            // Continue on current trajectory - don't re-target
-            // The missile will continue flying in its current direction
         }
         
-        // Update position
         Vector2 oldPosition = missile.position;
         missile.position.x += missile.velocity.x * dt;
         missile.position.y += missile.velocity.y * dt;
         
-        // Update trail - add new position every frame to create smooth trail
         missile.trailPoints.push_back(missile.position);
         
-        // Maintain trail length - keep only recent points
-        if (missile.trailPoints.size() > 20) { // Keep last 20 points for smooth trail
+        // trail logic
+        if (missile.trailPoints.size() > 20) {
             missile.trailPoints.erase(missile.trailPoints.begin());
         }
         
-        // Check if missile is out of bounds
         if (missile.position.x < -600 || missile.position.x > 600 || 
             missile.position.y < -360 || missile.position.y > 360) {
             missile.active = false;
         }
     }
     
-    // Remove inactive missiles
     activeMissiles.erase(
         std::remove_if(activeMissiles.begin(), activeMissiles.end(), 
             [](const Missile& m) { return !m.active; }), 
@@ -118,6 +107,7 @@ void MissileManager::updateMissilePhysics(float dt, const std::vector<Vector2>& 
     );
 }
 
+// explosion animation
 void MissileManager::updateExplosions(float dt) {
     for (auto& explosion : activeExplosions) {
         if (!explosion.active) continue;
@@ -125,12 +115,11 @@ void MissileManager::updateExplosions(float dt) {
         explosion.timer += dt;
         float progress = explosion.timer / explosion.duration;
         
-        // Update rings with different speeds for staggered effect
-        explosion.innerRing = explosion.maxRingSize * std::min(1.0f, progress * 2.0f);     // Fast
-        explosion.middleRing = explosion.maxRingSize * std::min(1.0f, progress * 1.5f);    // Medium
-        explosion.outerRing = explosion.maxRingSize * progress;                            // Slow
+        // multiple rings during explosion
+        explosion.innerRing = explosion.maxRingSize * std::min(1.0f, progress * 2.0f);
+        explosion.middleRing = explosion.maxRingSize * std::min(1.0f, progress * 1.5f);
+        explosion.outerRing = explosion.maxRingSize * progress;
         
-        // Flash intensity: bright at start, fades quickly
         explosion.flashIntensity = std::max(0.0f, 1.0f - progress * 3.0f);
         
         if (explosion.timer >= explosion.duration) {
@@ -138,7 +127,7 @@ void MissileManager::updateExplosions(float dt) {
         }
     }
     
-    // Remove inactive explosions
+    // erase explosion
     activeExplosions.erase(
         std::remove_if(activeExplosions.begin(), activeExplosions.end(), 
             [](const Explosion& e) { return !e.active; }), 
@@ -146,31 +135,27 @@ void MissileManager::updateExplosions(float dt) {
     );
 }
 
+// check collisions
 void MissileManager::checkCollisions(const std::vector<Vector2>& contactPositions, std::vector<uint32_t>& hitContactIds) {
     hitContactIds.clear();
     
     for (auto& missile : activeMissiles) {
         if (!missile.active) continue;
         
-        // Check collision with each contact
         for (size_t i = 0; i < contactPositions.size(); ++i) {
             Vector2 contactPos = contactPositions[i];
             float dx = missile.position.x - contactPos.x;
             float dy = missile.position.y - contactPos.y;
             float distance = sqrtf(dx*dx + dy*dy);
             
-            // Collision radius (missile + contact)
             if (distance < 15.0f) {
-                // Create explosion at missile position
                 createExplosion(missile.position);
                 
-                // Mark missile as inactive
                 missile.active = false;
                 
-                // Add contact to hit list (using index as ID)
                 hitContactIds.push_back(static_cast<uint32_t>(i));
                 
-                break;  // Missile can only hit one target
+                break;
             }
         }
     }
@@ -179,22 +164,21 @@ void MissileManager::checkCollisions(const std::vector<Vector2>& contactPosition
 void MissileManager::createExplosion(Vector2 position) {
     Explosion explosion{};
     explosion.position = position;
-    explosion.duration = 1.5f;  // 1.5 second explosion
+    explosion.duration = 1.5f;
     explosion.timer = 0.0f;
     explosion.active = true;
     
-    // Initialize ring data
     explosion.innerRing = 0.0f;
     explosion.middleRing = 0.0f;
     explosion.outerRing = 0.0f;
     explosion.flashIntensity = 1.0f;
-    explosion.maxRingSize = 60.0f;  // Larger explosion
+    explosion.maxRingSize = 60.0f;
     
     activeExplosions.push_back(explosion);
 }
 
 Vector2 MissileManager::calculateHeatSeekingVelocity(Vector2 missilePos, Vector2 missileVel, Vector2 targetPos, float maxTurnRate, float dt) {
-    // Calculate desired direction to target
+    // Calculate missile direction
     Vector2 toTarget = { targetPos.x - missilePos.x, targetPos.y - missilePos.y };
     float targetDistance = sqrtf(toTarget.x * toTarget.x + toTarget.y * toTarget.y);
     
@@ -202,29 +186,24 @@ Vector2 MissileManager::calculateHeatSeekingVelocity(Vector2 missilePos, Vector2
         return missileVel;  // Already very close
     }
     
-    // Normalize direction to target
     Vector2 desiredDir = { toTarget.x / targetDistance, toTarget.y / targetDistance };
     
-    // Calculate current missile direction
     float currentSpeed = sqrtf(missileVel.x * missileVel.x + missileVel.y * missileVel.y);
     Vector2 currentDir = { missileVel.x / currentSpeed, missileVel.y / currentSpeed };
     
-    // Calculate angle between current and desired direction
     float dotProduct = currentDir.x * desiredDir.x + currentDir.y * desiredDir.y;
     dotProduct = std::max(-1.0f, std::min(1.0f, dotProduct));  // Clamp to [-1, 1]
     float angleDiff = acosf(dotProduct);
     
-    // Limit turn rate
+    // limit turn rate for natural motion
     float maxAngleChange = maxTurnRate * dt;
     if (angleDiff > maxAngleChange) {
         angleDiff = maxAngleChange;
     }
     
-    // Determine turn direction (cross product)
     float crossZ = currentDir.x * desiredDir.y - currentDir.y * desiredDir.x;
     if (crossZ < 0) angleDiff = -angleDiff;
     
-    // Apply rotation to current velocity
     float cosAngle = cosf(angleDiff);
     float sinAngle = sinf(angleDiff);
     
@@ -233,7 +212,6 @@ Vector2 MissileManager::calculateHeatSeekingVelocity(Vector2 missilePos, Vector2
         missileVel.x * sinAngle + missileVel.y * cosAngle
     };
     
-    // Maintain speed
     float newSpeed = sqrtf(newVel.x * newVel.x + newVel.y * newVel.y);
     if (newSpeed > 0) {
         newVel.x = (newVel.x / newSpeed) * currentSpeed;

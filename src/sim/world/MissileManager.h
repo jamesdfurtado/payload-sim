@@ -14,9 +14,8 @@ struct Missile {
     float lifetime;
     bool active;
     
-    // Trail data - stores recent positions to create a path trail
     std::vector<Vector2> trailPoints;
-    static constexpr float MAX_TRAIL_LENGTH = 60.0f;  // Maximum trail length in world units
+    static constexpr float MAX_TRAIL_LENGTH = 60.0f;
 };
 
 struct Explosion {
@@ -25,7 +24,6 @@ struct Explosion {
     float timer;
     bool active;
     
-    // Multi-ring explosion data
     float innerRing;
     float middleRing;
     float outerRing;
@@ -40,7 +38,7 @@ public:
     uint32_t launchMissile(Vector2 startPosition, uint32_t targetId);
     void removeMissile(uint32_t id);
     void clearAllMissiles();
-    void explodeAllMissiles();  // Creates explosions at missile positions before clearing
+    void explodeAllMissiles();
 
     const std::vector<Missile>& getActiveMissiles() const { return activeMissiles; }
     const std::vector<Explosion>& getActiveExplosions() const { return activeExplosions; }
