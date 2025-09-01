@@ -18,23 +18,21 @@ ContactManager::ContactManager() {
     spawnTimer = 1.5f;
 }
 
+// creates a new contact with random position and type
 uint32_t ContactManager::spawnContact() {
     SonarContact c{};
     c.id = nextContactId++;
     
-    // Reset counter every 128 contacts to prevent overflow
     if (nextContactId > 128) {
         nextContactId = 1;
     }
     
-    // Random position within bounds
     c.position = { (float)GetRandomValue(-500, 500), (float)GetRandomValue(-300, 300) };
     
-    // Random direction and speed
     c.velocityDirRad = rand01() * 2.0f * PI;
-    c.speed = 10.0f + rand01() * 20.0f;  // Speed range: 10-30 units
+    c.speed = 10.0f + rand01() * 20.0f;
     
-    // Bias spawn toward enemies and ensure there is always at least one enemy
+    // ensures at least one enemy is on the board
     bool hasEnemyAlready = false;
     for (const auto& existing : activeContacts) {
         if (existing.type == ContactType::EnemySub) {
@@ -46,12 +44,12 @@ uint32_t ContactManager::spawnContact() {
     if (!hasEnemyAlready) {
         c.type = ContactType::EnemySub;
     } else {
-        // Heavier weight for enemies to increase engagement frequency
+        // spawn more enemies than other types
         float r = rand01();
-        if (r < 0.25f) c.type = ContactType::EnemySub;          // 25%
-        else if (r < 0.45f) c.type = ContactType::FriendlySub;  // next 20%
-        else if (r < 0.90f) c.type = ContactType::Fish;         // next 45%
-        else c.type = ContactType::Debris;                      // last 10%
+        if (r < 0.25f) c.type = ContactType::EnemySub;
+        else if (r < 0.45f) c.type = ContactType::FriendlySub;
+        else if (r < 0.90f) c.type = ContactType::Fish;
+        else c.type = ContactType::Debris;
     }
     
     activeContacts.push_back(c);
@@ -92,12 +90,11 @@ void ContactManager::updateSpawnTimer(float dt) {
 }
 
 void ContactManager::spawnContactsIfNeeded() {
-    // Ensure board is populated at all times
     while (activeContacts.size() < 10) {
         spawnContact();
     }
     
-    // If there are no enemies on the board, force-spawn one (up to the cap)
+    // force spawn an enemy if none exist
     {
         bool enemyPresent = false;
         for (const auto& c : activeContacts) {
@@ -124,9 +121,3 @@ void ContactManager::removeOutOfBoundsContacts() {
         }
     }
 }
-
-
-
-
-
-

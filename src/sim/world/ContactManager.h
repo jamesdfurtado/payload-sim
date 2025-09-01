@@ -7,12 +7,12 @@
 enum class ContactType { EnemySub, FriendlySub, Fish, Debris };
 
 struct SonarContact {
-    uint32_t id;                    // Unique identifier (never changes)
-    Vector2 position;               // Current position
-    float velocityDirRad;           // Direction of movement
-    float speed;                    // Speed of movement
-    ContactType type;               // Type of contact
-    bool isVisible = true;          // Visibility flag
+    uint32_t id;
+    Vector2 position;
+    float velocityDirRad;
+    float speed;
+    ContactType type;
+    bool isVisible = true;
 };
 
 class ContactManager {
@@ -34,8 +34,7 @@ public:
 
 
 
-
-
+    
 private:
     std::vector<SonarContact> activeContacts;
     uint32_t nextContactId = 1;
