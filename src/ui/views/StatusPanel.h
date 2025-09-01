@@ -9,7 +9,7 @@
 class StatusPanel : public Widget {
 public:
     explicit StatusPanel(SimulationEngine& engine) : engine(engine) {
-        // Create 9 indicator widgets in a 3x3 grid
+        // 3x3 grid of status lights
         const std::vector<std::string> labels = {
             "Authorization", "Target Validated", "Target Acquired",
             "Depth OK", "Tube Integrity", "Payload OK",
@@ -24,13 +24,11 @@ public:
     void draw() const override {
         const auto& s = engine.getState();
         
-        // Draw light grey background panel
         DrawRectangleRec(bounds, Fade(DARKGRAY, 0.4f));
         
-        // Update indicator states from simulation
+        //lights represent simulation state
         updateIndicatorStates(s);
         
-        // Position and draw indicators in 3x3 grid
         const int pad = 15;
         const int boxW = 180;
         const int boxH = 28;
@@ -40,12 +38,11 @@ public:
         int index = 0;
         
         for (auto& indicator : indicators) {
-            // Adjust vertical position: top row stays same, others move up by 10px each
             float adjustedY = (float)y;
-            if (index >= 3) { // Second row
+            if (index >= 3) { 
                 adjustedY -= 10;
             }
-            if (index >= 6) { // Third row
+            if (index >= 6) {
                 adjustedY -= 10;
             }
             
@@ -63,16 +60,16 @@ public:
 
 private:
     void updateIndicatorStates(const SimulationState& s) const {
-        // Map simulation state to indicator states
-        indicators[0]->setState(s.canLaunchAuthorized);        // Authorization
-        indicators[1]->setState(s.targetValidated);            // Target Validated
-        indicators[2]->setState(s.targetAcquired);             // Target Acquired
-        indicators[3]->setState(s.depthClearanceMet);          // Depth OK
-        indicators[4]->setState(s.launchTubeIntegrity);        // Tube Integrity
-        indicators[5]->setState(s.payloadSystemOperational);   // Payload OK
-        indicators[6]->setState(s.powerSupplyStable);          // Power Stable
-        indicators[7]->setState(s.noFriendlyUnitsInBlastRadius); // No Friendlies
-        indicators[8]->setState(s.launchConditionsFavorable);  // Conditions OK
+        // wire sim values to lights
+        indicators[0]->setState(s.canLaunchAuthorized);
+        indicators[1]->setState(s.targetValidated);
+        indicators[2]->setState(s.targetAcquired);
+        indicators[3]->setState(s.depthClearanceMet);
+        indicators[4]->setState(s.launchTubeIntegrity);
+        indicators[5]->setState(s.payloadSystemOperational);
+        indicators[6]->setState(s.powerSupplyStable);
+        indicators[7]->setState(s.noFriendlyUnitsInBlastRadius);
+        indicators[8]->setState(s.launchConditionsFavorable);
     }
 
     SimulationEngine& engine;
