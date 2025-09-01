@@ -13,16 +13,14 @@ public:
     void setLabel(const std::string& newLabel) { label = newLabel; }
 
     void draw() const override {
-        // Draw rectangular box outline
         DrawRectangleLinesEx(bounds, 1, LIGHTGRAY);
         
-        // Draw lightbulb circle (red when false, green when true)
+        // status light 
         Color lightColor = isActive ? GREEN : RED;
         int centerX = (int)(bounds.x + 12);
         int centerY = (int)(bounds.y + bounds.height / 2);
         DrawCircle(centerX, centerY, 8, lightColor);
         
-        // Draw text label - positioned further right to accommodate longer box
         DrawText(label.c_str(), (int)(bounds.x + 32), (int)(bounds.y + 6), 16, RAYWHITE);
     }
 
