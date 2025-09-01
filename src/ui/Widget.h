@@ -7,7 +7,7 @@ class Widget {
 public:
     virtual ~Widget() = default;
     virtual void update(float /*dt*/) {}
-    virtual void draw() const {}
+    virtual void draw() const {} 
     virtual bool onMouseDown(Vector2 /*pos*/) { return false; }
     virtual bool onMouseUp(Vector2 /*pos*/) { return false; }
     virtual bool onMouseMove(Vector2 /*pos*/) { return false; }
