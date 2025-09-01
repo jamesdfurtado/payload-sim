@@ -1,1 +1,8 @@
 build/
+build_web/
+
+# Ninja build tool
+ninja.exe
+ninja.zip
+
+CMakeLists.txt.backup
