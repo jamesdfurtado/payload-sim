@@ -13,17 +13,17 @@ public:
 
     explicit AuthCodePanel(AuthCodeCallback onAuthCodeSubmit);
 
-    // Widget interface
+    // widget interface
     void draw() const override;
     bool onMouseDown(Vector2 mousePos) override;
     bool onMouseUp(Vector2 mousePos) override;
     bool onMouseMove(Vector2 mousePos) override;
 
-    // State management
+    // state management
     void update(float dt);
     void setBounds(Rectangle newBounds);
     
-    // Public interface
+    // public interface
     void setAuthCode(const std::string& code);
     void clearInput();
     void clearAuthCodeDisplay();
@@ -31,26 +31,26 @@ public:
     bool isInputComplete() const;
     std::string getInputValue() const;
     
-    // Keypad input handling
+    // keypad input handling
     void handleKeypadInput(char key);
     void handleBackspace();
 
 private:
-    // Callback
+    // submit handler
     AuthCodeCallback authCodeCallback;
     
-    // TextBox widgets
+    // input and display boxes
     std::unique_ptr<TextBox> inputBox;
     std::unique_ptr<TextBox> displayBox;
     
-    // Layout
+    // positioning
     Rectangle authArea;
     
-    // State
+    // current values
     std::string currentAuthCode;
     bool authCodeEntered;
     
-    // Helper methods
+    // internal helpers
     void setupLayout();
     void handleAuthCodeSubmit();
 };
