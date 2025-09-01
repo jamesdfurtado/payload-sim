@@ -1,7 +1,7 @@
 # Submarine Payload Launch Simulator
 
 A submarine payload launch control simulator built in C++ with raylib, featuring a command center UI and systems engineering documentation.
-# **Play the Simulator Here!** --> [https://jamesdfurtado.github.io/payload-sim](https://jamesdfurtado.github.io/payload-sim)
+# *Play the Simulator Here!* --> [https://jamesdfurtado.github.io/payload-sim](https://jamesdfurtado.github.io/payload-sim)
 ![Demo](docs/demo.gif)
 
 ## Overview
