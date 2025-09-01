@@ -3,7 +3,7 @@
 LaunchSequencePanel::LaunchSequencePanel(LaunchSequenceHandler* handler) 
     : sequenceHandler(handler) {
     
-    // Create state buttons with appropriate colors
+    // launch sequence buttons
     authorizeButton = std::make_unique<Button>("AUTHORIZE LAUNCH", [this]() { onAuthorize(); });
     authorizeButton->setColors(BLUE, BLUE, WHITE);
     
@@ -16,7 +16,6 @@ LaunchSequencePanel::LaunchSequencePanel(LaunchSequenceHandler* handler)
     resetButton = std::make_unique<Button>("RESET SYSTEM", [this]() { onReset(); });
     resetButton->setColors(RED, RED, WHITE);
     
-    // Set initial bounds and layout
     setBounds(Rectangle{0, 0, 200, 200});
 }
 
@@ -26,19 +25,17 @@ void LaunchSequencePanel::setBounds(Rectangle newBounds) {
 }
 
 void LaunchSequencePanel::setupLayout() {
-    // Calculate layout for vertical button stack
+    // button layout
     float margin = 15;
     float buttonHeight = 35;
     float buttonWidth = bounds.width - 2 * margin;
     
-    // Button area
     buttonArea.x = bounds.x + margin;
     buttonArea.y = bounds.y + margin;
     buttonArea.width = buttonWidth;
     buttonArea.height = 4 * buttonHeight + 3 * margin;
     
-    // Position buttons vertically (moved down a bit)
-    float buttonY = buttonArea.y + 80; // Add 80px offset to move buttons down
+    float buttonY = buttonArea.y + 80;
     authorizeButton->setBounds(Rectangle{buttonArea.x, buttonY, buttonWidth, buttonHeight});
     buttonY += buttonHeight + margin;
     
@@ -52,7 +49,6 @@ void LaunchSequencePanel::setupLayout() {
 }
 
 void LaunchSequencePanel::update(float dt) {
-    // Update all buttons
     authorizeButton->update(dt);
     armButton->update(dt);
     launchButton->update(dt);
@@ -60,7 +56,6 @@ void LaunchSequencePanel::update(float dt) {
 }
 
 void LaunchSequencePanel::draw() const {
-    // Draw state buttons
     authorizeButton->draw();
     armButton->draw();
     launchButton->draw();

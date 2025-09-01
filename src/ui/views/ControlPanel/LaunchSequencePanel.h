@@ -23,19 +23,15 @@ public:
 private:
     LaunchSequenceHandler* sequenceHandler;
     
-    // State buttons
     std::unique_ptr<Button> authorizeButton;
     std::unique_ptr<Button> armButton;
     std::unique_ptr<Button> launchButton;
     std::unique_ptr<Button> resetButton;
     
-    // Layout
     Rectangle buttonArea;
     
-    // Helper methods
     void setupLayout();
     
-    // Button callbacks
     void onAuthorize();
     void onArm();
     void onLaunch();
