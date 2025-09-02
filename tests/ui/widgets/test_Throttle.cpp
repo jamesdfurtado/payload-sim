@@ -3,34 +3,50 @@
 
 class ThrottleTest : public ::testing::Test {
 protected:
-    float throttleValue = 0.0f;
+    Throttle throttle;
+    float callbackValue;
+    bool callbackCalled;
     
     void SetUp() override {
-        throttleValue = 0.0f;
-    }
-    
-    void throttleCallback(float value) {
-        throttleValue = value;
+        callbackValue = 0.0f;
+        callbackCalled = false;
+        throttle = Throttle([this](float value) { 
+            callbackValue = value; 
+            callbackCalled = true; 
+        });
+        throttle.setBounds({10, 10, 20, 100});
     }
 };
 
-TEST_F(ThrottleTest, DefaultValue) {
-    Throttle throttle([this](float value) { throttleCallback(value); });
-    // TODO: Test default throttle value
-    EXPECT_TRUE(true); // Placeholder
+TEST_F(ThrottleTest, InitializesWithDefaultValue) {
+    EXPECT_FLOAT_EQ(throttle.getValue(), 0.5f);
 }
 
-TEST_F(ThrottleTest, ValueRange) {
-    // TODO: Test throttle value range constraints
-    EXPECT_TRUE(true); // Placeholder
+TEST_F(ThrottleTest, SetValueClampsToValidRange) {
+    throttle.setValue(1.5f);
+    EXPECT_FLOAT_EQ(throttle.getValue(), 1.0f);
+    
+    throttle.setValue(-0.5f);
+    EXPECT_FLOAT_EQ(throttle.getValue(), 0.0f);
+    
+    throttle.setValue(0.75f);
+    EXPECT_FLOAT_EQ(throttle.getValue(), 0.75f);
 }
 
-TEST_F(ThrottleTest, MouseInteraction) {
-    // TODO: Test mouse drag interaction
-    EXPECT_TRUE(true); // Placeholder
+TEST_F(ThrottleTest, SetValueTriggersCallback) {
+    throttle.setValue(0.8f);
+    
+    EXPECT_TRUE(callbackCalled);
+    EXPECT_FLOAT_EQ(callbackValue, 0.8f);
 }
 
-TEST_F(ThrottleTest, CallbackExecution) {
-    // TODO: Test callback execution on value change
-    EXPECT_TRUE(true); // Placeholder
+TEST_F(ThrottleTest, MouseDragUpdatesValue) {
+    Vector2 handlePos = {20, 60};
+    Vector2 newPos = {20, 40};
+    
+    throttle.onMouseDown(handlePos);
+    throttle.onMouseMove(newPos);
+    
+    EXPECT_TRUE(throttle.isDragging());
+    EXPECT_GT(throttle.getValue(), 0.5f);
 }
