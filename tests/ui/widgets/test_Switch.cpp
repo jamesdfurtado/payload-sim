@@ -3,39 +3,50 @@
 
 class SwitchTest : public ::testing::Test {
 protected:
-    bool switchToggled = false;
-    bool lastState = false;
+    Switch switchWidget;
+    bool callbackCalled;
+    bool callbackValue;
     
     void SetUp() override {
-        switchToggled = false;
-        lastState = false;
-    }
-    
-    void switchCallback(bool state) {
-        switchToggled = true;
-        lastState = state;
+        callbackCalled = false;
+        callbackValue = false;
+        switchWidget = Switch(false, [this](bool value) { 
+            callbackCalled = true; 
+            callbackValue = value; 
+        });
+        switchWidget.setBounds({10, 10, 60, 30});
     }
 };
 
-TEST_F(SwitchTest, DefaultState) {
-    Switch switchWidget(false, [this](bool state) { switchCallback(state); });
+TEST_F(SwitchTest, InitializesWithCorrectState) {
+    Switch offSwitch(false);
+    Switch onSwitch(true);
+    
+    EXPECT_FALSE(offSwitch.getState());
+    EXPECT_TRUE(onSwitch.getState());
+}
+
+TEST_F(SwitchTest, SetStateChangesState) {
+    switchWidget.setState(true);
+    EXPECT_TRUE(switchWidget.getState());
+    
+    switchWidget.setState(false);
     EXPECT_FALSE(switchWidget.getState());
 }
 
-TEST_F(SwitchTest, InitialState) {
-    Switch switchWidget(true, [this](bool state) { switchCallback(state); });
-    EXPECT_TRUE(switchWidget.getState());
-}
-
-TEST_F(SwitchTest, StateToggle) {
-    // TODO: Test state toggling via mouse interaction
-    EXPECT_TRUE(true); // Placeholder
-}
-
-TEST_F(SwitchTest, QuietStateChange) {
-    Switch switchWidget(false, [this](bool state) { switchCallback(state); });
-    switchWidget.setStateQuiet(true);
+TEST_F(SwitchTest, SetStateTriggersCallback) {
+    switchWidget.setState(true);
     
-    EXPECT_TRUE(switchWidget.getState());
-    EXPECT_FALSE(switchToggled); // Callback should not have been called
+    EXPECT_TRUE(callbackCalled);
+    EXPECT_TRUE(callbackValue);
+}
+
+TEST_F(SwitchTest, MouseClickTogglesState) {
+    bool initialState = switchWidget.getState();
+    Vector2 pos = {40, 25};
+    
+    switchWidget.onMouseUp(pos);
+    
+    EXPECT_NE(switchWidget.getState(), initialState);
+    EXPECT_TRUE(callbackCalled);
 }
